@@ -13,7 +13,7 @@ namespace Plugin.Media
         /// <summary>
 		/// Gets if the plugin is supported on the current platform.
 		/// </summary>
-		public static bool IsSupported => implementation.Value == null ? false : true;
+		public static bool IsSupported => implementation.Value != null;
 
         /// <summary>
         /// Current plugin implementation to use

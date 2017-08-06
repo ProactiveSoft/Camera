@@ -7,6 +7,7 @@ using System.Linq;
 
 using UIKit;
 using Foundation;
+using Plugin.Media.Abstractions.Extras;
 
 namespace Plugin.Media
 {
@@ -305,5 +306,10 @@ namespace Plugin.Media
                     throw new UnauthorizedAccessException("On iOS 10 and higher you must set NSPhotoLibraryUsageDescription in your Info.plist file to enable Authorization Requests for Photo Library access!");
             }
         }
+
+	    public Task<MediaFile> Accept(IVisitor visitor)
+	    {
+		    throw new NotImplementedException();
+	    }
     }
 }

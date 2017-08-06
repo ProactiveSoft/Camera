@@ -9,6 +9,7 @@ using Windows.Storage.Pickers;
 
 using Plugin.Media.Abstractions;
 using System.Diagnostics;
+using Plugin.Media.Abstractions.Extras;
 
 namespace Plugin.Media
 {
@@ -370,5 +371,10 @@ namespace Plugin.Media
                 isCameraAvailable = true;
             }
         }
+
+	    public Task<MediaFile> Accept(IVisitor visitor)
+	    {
+		    throw new NotImplementedException();
+	    }
     }
 }

@@ -14,4 +14,8 @@
     <DocumentationFile>bin\Release\netstandard1.0\Plugin.Media.Abstractions.xml</DocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
+  </ItemGroup>
+
 </Project>

@@ -70,6 +70,12 @@
     <Compile Include="..\Media.Plugin\CrossMedia.cs">
       <Link>CrossMedia.cs</Link>
     </Compile>
+    <Compile Include="Extras\Abstractions\ICameraActionVisitable.cs" />
+    <Compile Include="Extras\Abstractions\ICameraActionVisitor.cs" />
+    <Compile Include="Extras\Abstractions\ICameraStateVisitor.cs" />
+    <Compile Include="Extras\CameraWithoutConfirmation\AndroidBaseVisitor.cs" />
+    <Compile Include="Extras\CameraWithoutConfirmation\Handlers\CameraDeviceStateHandlers.cs" />
+    <Compile Include="Extras\CameraWithoutConfirmation\NoConfirmTakePhotoVisitor.cs" />
     <Compile Include="MainApplication.cs" />
     <Compile Include="MediaFile.cs" />
     <Compile Include="MediaImplementation.cs" />
@@ -87,6 +93,7 @@
       <Name>Media.Plugin.Abstractions</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="..\Media.Plugin.Shared\Media.Plugin.Shared.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
