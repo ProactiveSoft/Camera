@@ -7,7 +7,7 @@ namespace Plugin.Media.Abstractions
 	/// <summary>
 	/// Interface for Media
 	/// </summary>
-	public interface IMedia : IVisitable
+	public interface IMedia : IVisitableReturns
 	{
 		/// <summary>
 		/// Initialize all camera components

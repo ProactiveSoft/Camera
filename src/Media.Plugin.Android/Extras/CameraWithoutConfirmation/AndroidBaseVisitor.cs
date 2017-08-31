@@ -1,10 +1,17 @@
 using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using AndroidSize = Android.Util.Size;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
+using Android.Graphics;
 using Android.Hardware.Camera2;
+using Android.Hardware.Camera2.Params;
 using Android.OS;
+using Android.Widget;
 using Java.Lang;
 using Plugin.CurrentActivity;
 using Plugin.Media.Abstractions;
@@ -16,23 +23,30 @@ using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 
 namespace Plugin.Media.Extras.CameraWithoutConfirmation
 {
-	public abstract class AndroidBaseVisitor : BaseVisitor, ICameraStateVisitor, ICameraActionVisitable
+	public abstract class AndroidBaseVisitor : BaseVisitor<Task<MediaFile>>, ICameraVisitor<Task<MediaFile>>,
+		ICameraStateVisitor, IVisitable
 	{
 		private readonly Activity _currentActivity = CrossCurrentActivity.Current.Activity;
 
 		//+ Camera
 		protected readonly CameraManager Manager;
+
 		protected CameraDevice CameraDevice;
-		private readonly CameraDeviceStateHandlers _cameraDeviceStateHandlers;
+		private readonly CameraDeviceStateHandler _cameraDeviceStateHandler;
 
 		//+ Camera properties
 		protected readonly StoreCameraMediaOptions StoreOptions;
+
 		protected string CameraId;
 		protected CameraCharacteristics CameraCharacteristics;
+		protected Size LargestImageResolution;
 
-		//+ Camera background threads
+		//+ Camera background thread
 		private HandlerThread _cameraThread;
+
 		protected internal Handler CameraBackgroundHandler;
+
+		internal static readonly MediaPickerActivity MediaPickerActivity = new MediaPickerActivity();
 
 		private readonly Semaphore _cameraOpenCloseLock = new Semaphore(1, 1);
 
@@ -42,34 +56,64 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 
 		protected AndroidBaseVisitor(StoreMediaOptions options) : base(options)
 		{
-			StoreOptions = (StoreCameraMediaOptions)Options;
+			StoreOptions = (StoreCameraMediaOptions) Options;
 
-			Manager = (CameraManager)_currentActivity.GetSystemService(Context.CameraService);
+			Manager = (CameraManager) _currentActivity.GetSystemService(Context.CameraService);
 
 			// Handlers
-			_cameraDeviceStateHandlers = new CameraDeviceStateHandlers(this);
+			_cameraDeviceStateHandler = new CameraDeviceStateHandler(this);
 		}
 
-		public override Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
+		/// <summary>
+		/// Setup the camera.
+		/// </summary>
+		/// <param name="data">Data containing camera permission & camera options.</param>
+		/// <returns>Doesn't return anything. Task&lt;MediaFile&gt; will be returned by child.</returns>
+		/// <exception cref="System.NotSupportedException">Not supported exception when platform doesn't support camera.</exception>
+		public virtual Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
 		{
 			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) = data;
 
-			if (!media.IsCameraAvailable) throw new NotSupportedException();
+			try
+			{
+				if (!media.IsCameraAvailable) throw new NotSupportedException("OS doesn't support Camera.");
 
-			if (!permission) return Task.FromResult<MediaFile>(null);
+				if (!permission) return Task.FromResult<MediaFile>(null);
 
-			verifyOptions(Options);
+				verifyOptions(Options);
 
-			FindCameraProperties(StoreOptions.DefaultCamera);
+				FindCameraProperties(StoreOptions.DefaultCamera);
 
-			Manager.OpenCamera(CameraId, _cameraDeviceStateHandlers, CameraBackgroundHandler);
+				Manager.OpenCamera(CameraId, _cameraDeviceStateHandler, CameraBackgroundHandler);
 
-			// ToDo: CameraDevice configuration
+
+				StreamConfigurationMap map =
+					(StreamConfigurationMap) CameraCharacteristics.Get(CameraCharacteristics.ScalerStreamConfigurationMap);
+				AndroidSize[] imageSupportedSizesAndroid = map.GetOutputSizes((int) ImageFormatType.Jpeg);
+
+				AndroidSize largestSizeAndroid = imageSupportedSizesAndroid
+					.OrderByDescending(droidSize => (long) droidSize.Height * droidSize.Width)
+					.FirstOrDefault();
+
+				LargestImageResolution = new Size(largestSizeAndroid.Width, largestSizeAndroid.Height);
+			}
+			catch (CameraAccessException cameraAccessException)
+			{
+				cameraAccessException.PrintStackTrace();
+			}
+			catch (NullPointerException nullPointerException)
+			{
+				Toast.MakeText(_currentActivity, "App cannot use Camera because camera driver is old.", ToastLength.Long);
+			}
 
 			// No need to return anything as it only prepares camera to be used by Child
 			return Task.FromResult<MediaFile>(null);
 		}
 
+		/// <summary>
+		/// Receives <see cref="CameraDevice"/> from Camera Device handler.
+		/// </summary>
+		/// <param name="cameraDevice">The camera device.</param>
 		public void Visit(CameraDevice cameraDevice) => CameraDevice = cameraDevice;
 
 		private void FindCameraProperties(CameraChoice defaultCamera)
@@ -93,8 +137,8 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 				foreach (string camId in Manager.GetCameraIdList())
 				{
 					CameraCharacteristics cameraCharacteristics = Manager.GetCameraCharacteristics(camId);
-					Integer facing = (Integer)cameraCharacteristics.Get(CameraCharacteristics.LensFacing);
-					if (facing != null && facing == Integer.ValueOf((int)lensFacing))
+					Integer facing = (Integer) cameraCharacteristics.Get(CameraCharacteristics.LensFacing);
+					if (facing != null && facing == Integer.ValueOf((int) lensFacing))
 					{
 						CameraCharacteristics = cameraCharacteristics;
 						CameraId = camId;
@@ -125,12 +169,21 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 			}
 		}
 
-		public void Accept(ICameraActionVisitor visitor)
+		/// <summary>
+		/// Passes private members to handlers.
+		/// </summary>
+		/// <param name="visitor">Handler.</param>
+		public void Accept(IVisitor visitor)
 		{
 			switch (visitor)
 			{
-				case CameraDeviceStateHandlers cameraDeviceStateHandlers:
-					cameraDeviceStateHandlers.Visit(_cameraOpenCloseLock);
+				case IPickerActivityVisitor pickerActivityVisitor:
+					pickerActivityVisitor.Visit(CameraBackgroundHandler, MediaPickerActivity);
+
+					MediaPickerActivity.Accept(pickerActivityVisitor); // Passes private members of MediaPickerActivity
+					break;
+				case CameraDeviceStateHandler cameraDeviceStateHandler:
+					cameraDeviceStateHandler.Visit(_cameraOpenCloseLock);
 					break;
 				default:
 					visitor.Visit(this);

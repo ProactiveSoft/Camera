@@ -73,8 +73,10 @@
     <Compile Include="Extras\Abstractions\ICameraActionVisitable.cs" />
     <Compile Include="Extras\Abstractions\ICameraActionVisitor.cs" />
     <Compile Include="Extras\Abstractions\ICameraStateVisitor.cs" />
+    <Compile Include="Extras\Abstractions\IPickerActivityVisitor.cs" />
     <Compile Include="Extras\CameraWithoutConfirmation\AndroidBaseVisitor.cs" />
-    <Compile Include="Extras\CameraWithoutConfirmation\Handlers\CameraDeviceStateHandlers.cs" />
+    <Compile Include="Extras\CameraWithoutConfirmation\Handlers\CameraDeviceStateHandler.cs" />
+    <Compile Include="Extras\CameraWithoutConfirmation\Handlers\ImageAvailableHandler.cs" />
     <Compile Include="Extras\CameraWithoutConfirmation\NoConfirmTakePhotoVisitor.cs" />
     <Compile Include="MainApplication.cs" />
     <Compile Include="MediaFile.cs" />

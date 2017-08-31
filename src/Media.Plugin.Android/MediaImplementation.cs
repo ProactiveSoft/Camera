@@ -32,7 +32,6 @@ namespace Plugin.Media
 		/// </summary>
 		public MediaImplementation()
 		{
-
 			this.context = Android.App.Application.Context;
 			IsCameraAvailable = context.PackageManager.HasSystemFeature(PackageManager.FeatureCamera);
 
@@ -593,7 +592,7 @@ namespace Plugin.Media
 					catch (Exception ex)
 					{
 #if DEBUG
-                        throw ex;
+						throw ex;
 #else
 						return false;
 #endif
@@ -603,7 +602,7 @@ namespace Plugin.Media
 			catch (Exception ex)
 			{
 #if DEBUG
-                throw ex;
+				throw ex;
 #else
 				return Task.FromResult(false);
 #endif
@@ -722,7 +721,7 @@ namespace Plugin.Media
 					catch (Exception ex)
 					{
 #if DEBUG
-                        throw ex;
+						throw ex;
 #else
 						return false;
 #endif
@@ -732,7 +731,7 @@ namespace Plugin.Media
 			catch (Exception ex)
 			{
 #if DEBUG
-                throw ex;
+				throw ex;
 #else
 				return Task.FromResult(false);
 #endif
@@ -796,20 +795,25 @@ namespace Plugin.Media
 			catch (Exception ex)
 			{
 #if DEBUG
-                throw ex;
+				throw ex;
 #else
 				return 0;
 #endif
 			}
 		}
 
-		public async Task<MediaFile> Accept(IVisitor visitor)
+		#region Visitable
+		
+		public void Accept(IVisitor visitor) => visitor.Visit(this);
+
+		public T Accept<T>(IVisitor<T> visitor)
 		{
-			(bool, Action<StoreMediaOptions>, IMedia) data = (await RequestCameraPermissions(), VerifyOptions, this);
+			(bool, Action<StoreMediaOptions>, IMedia) data =
+				(Task.Run(async () => await RequestCameraPermissions()).Result, VerifyOptions, this);
 
-			return await visitor.Visit(data);
-		}
+			return ((ICameraVisitor<T>)visitor).Visit(data);
+		}		
+		
+		#endregion
 	}
-
-
 }

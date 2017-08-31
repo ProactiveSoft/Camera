@@ -1,10 +1,10 @@
 ﻿{
   "dependencies": {
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.3",
-    "System.ValueTuple": "4.3.1"
+    "System.ValueTuple": "4.4.0"
   },
   "frameworks": {
-    "uap10.0": {}
+    "uap10.0.15063": {}
   },
   "runtimes": {
     "win10-arm": {},

@@ -1,8 +1,8 @@
-﻿using System.Threading;
+﻿using Plugin.Media.Abstractions.Extras;
 
 namespace Plugin.Media.Extras.Abstractions
 {
-	public interface ICameraActionVisitor
+	public interface ICameraActionVisitor : IVisitor
 	{
 		void Visit(ICameraActionVisitable visitable);
 	}

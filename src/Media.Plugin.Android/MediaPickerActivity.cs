@@ -14,130 +14,132 @@ using Plugin.Media.Abstractions;
 using Android.Content.PM;
 using System.Globalization;
 using Android.Support.V4.Content;
+using Plugin.Media.Abstractions.Extras;
+using Plugin.Media.Extras.Abstractions;
 
 namespace Plugin.Media
 {
 	/// <summary>
 	/// Picker
 	/// </summary>
-	[Activity(ConfigurationChanges= ConfigChanges.Orientation | ConfigChanges.ScreenSize)]
-    public class MediaPickerActivity
-        : Activity, Android.Media.MediaScannerConnection.IOnScanCompletedListener
-    {
-        internal const string ExtraPath = "path";
-        internal const string ExtraLocation = "location";
-        internal const string ExtraType = "type";
-        internal const string ExtraId = "id";
-        internal const string ExtraAction = "action";
-        internal const string ExtraTasked = "tasked";
-        internal const string ExtraSaveToAlbum = "album_save";
-        internal const string ExtraFront = "android.intent.extras.CAMERA_FACING";
+	[Activity(ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize)]
+	public class MediaPickerActivity
+		: Activity, Android.Media.MediaScannerConnection.IOnScanCompletedListener, IVisitableReturns
+	{
+		internal const string ExtraPath = "path";
+		internal const string ExtraLocation = "location";
+		internal const string ExtraType = "type";
+		internal const string ExtraId = "id";
+		internal const string ExtraAction = "action";
+		internal const string ExtraTasked = "tasked";
+		internal const string ExtraSaveToAlbum = "album_save";
+		internal const string ExtraFront = "android.intent.extras.CAMERA_FACING";
 
-        internal static event EventHandler<MediaPickedEventArgs> MediaPicked;
+		internal static event EventHandler<MediaPickedEventArgs> MediaPicked;
 
-        private int id;
-        private int front;
-        private string title;
-        private string description;
-        private string type;
+		private int id;
+		private int front;
+		private string title;
+		private string description;
+		private string type;
 
-        /// <summary>
-        /// The user's destination path.
-        /// </summary>
-        private Uri path;
-        private bool isPhoto;
-        private bool saveToAlbum;
-        private string action;
+		/// <summary>
+		/// The user's destination path.
+		/// </summary>
+		private Uri path;
+		private bool isPhoto;
+		private bool saveToAlbum;
+		private string action;
 
-        private int seconds;
-        private long size;
-        private VideoQuality quality;
+		private int seconds;
+		private long size;
+		private VideoQuality quality;
 
-        private bool tasked;
-        /// <summary>
-        /// OnSaved
-        /// </summary>
-        /// <param name="outState"></param>
-        protected override void OnSaveInstanceState(Bundle outState)
-        {
-            outState.PutBoolean("ran", true);
-            outState.PutString(MediaStore.MediaColumns.Title, title);
-            outState.PutString(MediaStore.Images.ImageColumns.Description, description);
-            outState.PutInt(ExtraId, id);
-            outState.PutString(ExtraType, type);
-            outState.PutString(ExtraAction, action);
-            outState.PutInt(MediaStore.ExtraDurationLimit, seconds);
-            outState.PutLong(MediaStore.ExtraSizeLimit, size);
-            outState.PutInt(MediaStore.ExtraVideoQuality, (int)quality);
-            outState.PutBoolean(ExtraSaveToAlbum, saveToAlbum);
-            outState.PutBoolean(ExtraTasked, tasked);
-            outState.PutInt(ExtraFront, front);
+		private bool tasked;
+		/// <summary>
+		/// OnSaved
+		/// </summary>
+		/// <param name="outState"></param>
+		protected override void OnSaveInstanceState(Bundle outState)
+		{
+			outState.PutBoolean("ran", true);
+			outState.PutString(MediaStore.MediaColumns.Title, title);
+			outState.PutString(MediaStore.Images.ImageColumns.Description, description);
+			outState.PutInt(ExtraId, id);
+			outState.PutString(ExtraType, type);
+			outState.PutString(ExtraAction, action);
+			outState.PutInt(MediaStore.ExtraDurationLimit, seconds);
+			outState.PutLong(MediaStore.ExtraSizeLimit, size);
+			outState.PutInt(MediaStore.ExtraVideoQuality, (int)quality);
+			outState.PutBoolean(ExtraSaveToAlbum, saveToAlbum);
+			outState.PutBoolean(ExtraTasked, tasked);
+			outState.PutInt(ExtraFront, front);
 
-            if (path != null)
-                outState.PutString(ExtraPath, path.Path);
+			if (path != null)
+				outState.PutString(ExtraPath, path.Path);
 
-            base.OnSaveInstanceState(outState);
-        }
+			base.OnSaveInstanceState(outState);
+		}
 
-        
 
-        /// <summary>
-        /// OnCreate
-        /// </summary>
-        /// <param name="savedInstanceState"></param>
-        protected override void OnCreate(Bundle savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
 
-            var b = (savedInstanceState ?? Intent.Extras);
+		/// <summary>
+		/// OnCreate
+		/// </summary>
+		/// <param name="savedInstanceState"></param>
+		protected override void OnCreate(Bundle savedInstanceState)
+		{
+			base.OnCreate(savedInstanceState);
 
-            var ran = b.GetBoolean("ran", defaultValue: false);
+			var b = (savedInstanceState ?? Intent.Extras);
 
-            title = b.GetString(MediaStore.MediaColumns.Title);
-            description = b.GetString(MediaStore.Images.ImageColumns.Description);
+			var ran = b.GetBoolean("ran", defaultValue: false);
 
-            tasked = b.GetBoolean(ExtraTasked);
-            id = b.GetInt(ExtraId, 0);
-            type = b.GetString(ExtraType);
-            front = b.GetInt(ExtraFront);
-            if (type == "image/*")
-                isPhoto = true;
+			title = b.GetString(MediaStore.MediaColumns.Title);
+			description = b.GetString(MediaStore.Images.ImageColumns.Description);
 
-            action = b.GetString(ExtraAction);
-            Intent pickIntent = null;
-            try
-            {
-                pickIntent = new Intent(action);
-                if (action == Intent.ActionPick)
-                    pickIntent.SetType(type);
-                else
-                {
-                    if (!isPhoto)
-                    {
-                        seconds = b.GetInt(MediaStore.ExtraDurationLimit, 0);
-                        if (seconds != 0)
-                            pickIntent.PutExtra(MediaStore.ExtraDurationLimit, seconds);
-                        size = b.GetLong(MediaStore.ExtraSizeLimit, 0);
-                        if (size != 0)
-                        {
-                            pickIntent.PutExtra(MediaStore.ExtraSizeLimit, size);
-                        }
-                    }
+			tasked = b.GetBoolean(ExtraTasked);
+			id = b.GetInt(ExtraId, 0);
+			type = b.GetString(ExtraType);
+			front = b.GetInt(ExtraFront);
+			if (type == "image/*")
+				isPhoto = true;
 
-                    saveToAlbum = b.GetBoolean(ExtraSaveToAlbum);
-                    pickIntent.PutExtra(ExtraSaveToAlbum, saveToAlbum);
+			action = b.GetString(ExtraAction);
+			Intent pickIntent = null;
+			try
+			{
+				pickIntent = new Intent(action);
+				if (action == Intent.ActionPick)
+					pickIntent.SetType(type);
+				else
+				{
+					if (!isPhoto)
+					{
+						seconds = b.GetInt(MediaStore.ExtraDurationLimit, 0);
+						if (seconds != 0)
+							pickIntent.PutExtra(MediaStore.ExtraDurationLimit, seconds);
+						size = b.GetLong(MediaStore.ExtraSizeLimit, 0);
+						if (size != 0)
+						{
+							pickIntent.PutExtra(MediaStore.ExtraSizeLimit, size);
+						}
+					}
 
-                    quality = (VideoQuality)b.GetInt(MediaStore.ExtraVideoQuality, (int)VideoQuality.High);
-                    pickIntent.PutExtra(MediaStore.ExtraVideoQuality, GetVideoQuality(quality));
+					saveToAlbum = b.GetBoolean(ExtraSaveToAlbum);
+					pickIntent.PutExtra(ExtraSaveToAlbum, saveToAlbum);
 
-                    if (front != 0)
-                        pickIntent.PutExtra(ExtraFront, (int)Android.Hardware.CameraFacing.Front);
+					quality = (VideoQuality)b.GetInt(MediaStore.ExtraVideoQuality, (int)VideoQuality.High);
+					pickIntent.PutExtra(MediaStore.ExtraVideoQuality, GetVideoQuality(quality));
 
-                    if (!ran)
-                    {
-                        path = GetOutputMediaFile(this, b.GetString(ExtraPath), title, isPhoto, false);
+					if (front != 0)
+						pickIntent.PutExtra(ExtraFront, (int)Android.Hardware.CameraFacing.Front);
 
-                        Touch();
+					if (!ran)
+					{
+						path = GetOutputMediaFile(this, b.GetString(ExtraPath), title, isPhoto, false);
+
+						Touch();
 
 						var targetsNOrNewer = false;
 
@@ -145,7 +147,7 @@ namespace Plugin.Media
 						{
 							targetsNOrNewer = (int)Application.Context.ApplicationInfo.TargetSdkVersion >= 24;
 						}
-						catch(Exception appInfoEx)
+						catch (Exception appInfoEx)
 						{
 							System.Diagnostics.Debug.WriteLine("Unable to get application info for targetSDK, trying to get from package manager: " + appInfoEx);
 							targetsNOrNewer = false;
@@ -161,7 +163,7 @@ namespace Plugin.Media
 						{
 							var photoURI = FileProvider.GetUriForFile(this,
 																	  Application.Context.PackageName + ".fileprovider",
-							                                          new Java.IO.File(path.Path));
+																	  new Java.IO.File(path.Path));
 
 							GrantUriPermissionsForIntent(pickIntent, photoURI);
 							pickIntent.PutExtra(MediaStore.ExtraOutput, photoURI);
@@ -170,68 +172,68 @@ namespace Plugin.Media
 						{
 							pickIntent.PutExtra(MediaStore.ExtraOutput, path);
 						}
-                    }
-                    else
-                        path = Uri.Parse(b.GetString(ExtraPath));
-                }
+					}
+					else
+						path = Uri.Parse(b.GetString(ExtraPath));
+				}
 
 
 
-                if (!ran)
-                    StartActivityForResult(pickIntent, id);
-            }
-            catch (Exception ex)
-            {
-                OnMediaPicked(new MediaPickedEventArgs(id, ex));
-                //must finish here because an exception has occured else blank screen
-                Finish();
-            }
-            finally
-            {
-                if (pickIntent != null)
-                    pickIntent.Dispose();
-            }
-        }
+				if (!ran)
+					StartActivityForResult(pickIntent, id);
+			}
+			catch (Exception ex)
+			{
+				OnMediaPicked(new MediaPickedEventArgs(id, ex));
+				//must finish here because an exception has occured else blank screen
+				Finish();
+			}
+			finally
+			{
+				if (pickIntent != null)
+					pickIntent.Dispose();
+			}
+		}
 
-        private void Touch()
-        {
-            if (path.Scheme != "file")
-                return;
+		private void Touch()
+		{
+			if (path.Scheme != "file")
+				return;
 
-            var newPath = GetLocalPath(path);
-            try
-            {
-                var stream = File.Create(newPath);
-                stream.Close();
-                stream.Dispose();
+			var newPath = GetLocalPath(path);
+			try
+			{
+				var stream = File.Create(newPath);
+				stream.Close();
+				stream.Dispose();
 
-            }
-            catch(Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Unable to create path: " + newPath + " " + ex.Message + "This means you have illegal characters");
-                throw ex;
-            }
-        }
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine("Unable to create path: " + newPath + " " + ex.Message + "This means you have illegal characters");
+				throw ex;
+			}
+		}
 
-        private void DeleteOutputFile()
-        {
-            try
-            {
-                if (path?.Scheme != "file")
-                    return;
+		private void DeleteOutputFile()
+		{
+			try
+			{
+				if (path?.Scheme != "file")
+					return;
 
-                var localPath = GetLocalPath(path);
+				var localPath = GetLocalPath(path);
 
-                if (File.Exists(localPath))
-                {
-                    File.Delete(localPath);
-                }
-            }
-            catch(Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Unable to delete file: " + ex.Message);
-            }
-        }
+				if (File.Exists(localPath))
+				{
+					File.Delete(localPath);
+				}
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine("Unable to delete file: " + ex.Message);
+			}
+		}
 
 		private void GrantUriPermissionsForIntent(Intent intent, Uri uri)
 		{
@@ -243,193 +245,193 @@ namespace Plugin.Media
 			}
 		}
 
-        internal static Task<MediaPickedEventArgs> GetMediaFileAsync(Context context, int requestCode, string action, bool isPhoto, ref Uri path, Uri data, bool saveToAlbum)
-        {
-            Task<Tuple<string, bool>> pathFuture;
+		internal static Task<MediaPickedEventArgs> GetMediaFileAsync(Context context, int requestCode, string action, bool isPhoto, ref Uri path, Uri data, bool saveToAlbum)
+		{
+			Task<Tuple<string, bool>> pathFuture;
 
-            string originalPath = null;
+			string originalPath = null;
 
-            if (action != Intent.ActionPick)
-            {
+			if (action != Intent.ActionPick)
+			{
 
-                originalPath = path.Path;
-
-
-                // Not all camera apps respect EXTRA_OUTPUT, some will instead
-                // return a content or file uri from data.
-                if (data != null && data.Path != originalPath)
-                {
-                    originalPath = data.ToString();
-                    var currentPath = path.Path;
-                    pathFuture = TryMoveFileAsync(context, data, path, isPhoto, false).ContinueWith(t =>
-                        new Tuple<string, bool>(t.Result ? currentPath : null, false));
-                }
-                else
-                {
-                    pathFuture = TaskFromResult(new Tuple<string, bool>(path.Path, false));
-                   
-                }
-            }
-            else if (data != null)
-            {
-                originalPath = data.ToString();
-                path = data;
-                pathFuture = GetFileForUriAsync(context, path, isPhoto, false);
-            }
-            else
-                pathFuture = TaskFromResult<Tuple<string, bool>>(null);
-
-            return pathFuture.ContinueWith(t =>
-            {
-                
-                var resultPath = t.Result.Item1;
-                var aPath = originalPath;
-                if (resultPath != null && File.Exists(t.Result.Item1))
-                {
-                    var mf = new MediaFile(resultPath, () =>
-                      {
-                          return File.OpenRead(resultPath);
-                      }, albumPath: aPath);
-                    return new MediaPickedEventArgs(requestCode, false, mf);
-                }
-                else
-                    return new MediaPickedEventArgs(requestCode, new MediaFileNotFoundException(originalPath));
-            });
-        }
-
-        bool completed;
-        /// <summary>
-        /// OnActivity Result
-        /// </summary>
-        /// <param name="requestCode"></param>
-        /// <param name="resultCode"></param>
-        /// <param name="data"></param>
-        protected override async void OnActivityResult(int requestCode, Result resultCode, Intent data)
-        {
-            completed = true;
-            base.OnActivityResult(requestCode, resultCode, data);
+				originalPath = path.Path;
 
 
+				// Not all camera apps respect EXTRA_OUTPUT, some will instead
+				// return a content or file uri from data.
+				if (data != null && data.Path != originalPath)
+				{
+					originalPath = data.ToString();
+					var currentPath = path.Path;
+					pathFuture = TryMoveFileAsync(context, data, path, isPhoto, false).ContinueWith(t =>
+						new Tuple<string, bool>(t.Result ? currentPath : null, false));
+				}
+				else
+				{
+					pathFuture = TaskFromResult(new Tuple<string, bool>(path.Path, false));
 
-            if (tasked)
-            {
+				}
+			}
+			else if (data != null)
+			{
+				originalPath = data.ToString();
+				path = data;
+				pathFuture = GetFileForUriAsync(context, path, isPhoto, false);
+			}
+			else
+				pathFuture = TaskFromResult<Tuple<string, bool>>(null);
 
-               
-                Task<MediaPickedEventArgs> future;
+			return pathFuture.ContinueWith(t =>
+			{
 
-                if (resultCode == Result.Canceled)
-                {
-                    //delete empty file
-                    DeleteOutputFile();
+				var resultPath = t.Result.Item1;
+				var aPath = originalPath;
+				if (resultPath != null && File.Exists(t.Result.Item1))
+				{
+					var mf = new MediaFile(resultPath, () =>
+					  {
+						  return File.OpenRead(resultPath);
+					  }, albumPath: aPath);
+					return new MediaPickedEventArgs(requestCode, false, mf);
+				}
+				else
+					return new MediaPickedEventArgs(requestCode, new MediaFileNotFoundException(originalPath));
+			});
+		}
 
-                    future = TaskFromResult(new MediaPickedEventArgs(requestCode, isCanceled: true));
+		bool completed;
+		/// <summary>
+		/// OnActivity Result
+		/// </summary>
+		/// <param name="requestCode"></param>
+		/// <param name="resultCode"></param>
+		/// <param name="data"></param>
+		protected override async void OnActivityResult(int requestCode, Result resultCode, Intent data)
+		{
+			completed = true;
+			base.OnActivityResult(requestCode, resultCode, data);
 
-                    Finish();
-                    await Task.Delay(50);
-                    future.ContinueWith(t => OnMediaPicked(t.Result));
-                }
-                else
-                {
-                    
-                    var e = await GetMediaFileAsync(this, requestCode, action, isPhoto, ref path, data?.Data, false);
-                    Finish();
-                    await Task.Delay(50);
-                    OnMediaPicked(e);
 
-                }
-            }
-            else
-            {
-                if (resultCode == Result.Canceled)
-                {
-                    //delete empty file
-                    DeleteOutputFile();
 
-                    SetResult(Result.Canceled);
-                }
-                else
-                {
-                    Intent resultData = new Intent();
-                    resultData.PutExtra("MediaFile", data?.Data);
-                    resultData.PutExtra("path", path);
-                    resultData.PutExtra("isPhoto", isPhoto);
-                    resultData.PutExtra("action", action);
-                    resultData.PutExtra(ExtraSaveToAlbum, saveToAlbum);
-                    SetResult(Result.Ok, resultData);
-                }
+			if (tasked)
+			{
 
-                Finish();
-            }
-        }
 
-        static Task<bool> TryMoveFileAsync(Context context, Uri url, Uri path, bool isPhoto, bool saveToAlbum)
-        {
-            var moveTo = GetLocalPath(path);
-            return GetFileForUriAsync(context, url, isPhoto, false).ContinueWith(t =>
-            {
-                if (t.Result.Item1 == null)
-                    return false;
+				Task<MediaPickedEventArgs> future;
 
-                try
-                {
-                    if (url.Scheme == "content")
-                        context.ContentResolver.Delete(url, null, null);
-                }
-                catch(Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Unable to delete content resolver file: " + ex.Message);
-                }
+				if (resultCode == Result.Canceled)
+				{
+					//delete empty file
+					DeleteOutputFile();
 
-                try
-                {
-                    File.Delete(moveTo);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Unable to delete normal file: " + ex.Message);
-                }
+					future = TaskFromResult(new MediaPickedEventArgs(requestCode, isCanceled: true));
 
-                try
-                {
-                    File.Move(t.Result.Item1, moveTo);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Unable to move files: " + ex.Message);
-                }
+					Finish();
+					await Task.Delay(50);
+					future.ContinueWith(t => OnMediaPicked(t.Result));
+				}
+				else
+				{
 
-                return true;
-            }, TaskScheduler.Default);
-        }
+					var e = await GetMediaFileAsync(this, requestCode, action, isPhoto, ref path, data?.Data, false);
+					Finish();
+					await Task.Delay(50);
+					OnMediaPicked(e);
 
-        private static int GetVideoQuality(VideoQuality videoQuality)
-        {
-            switch (videoQuality)
-            {
-                case VideoQuality.Medium:
-                case VideoQuality.High:
-                    return 1;
+				}
+			}
+			else
+			{
+				if (resultCode == Result.Canceled)
+				{
+					//delete empty file
+					DeleteOutputFile();
 
-                default:
-                    return 0;
-            }
-        }
+					SetResult(Result.Canceled);
+				}
+				else
+				{
+					Intent resultData = new Intent();
+					resultData.PutExtra("MediaFile", data?.Data);
+					resultData.PutExtra("path", path);
+					resultData.PutExtra("isPhoto", isPhoto);
+					resultData.PutExtra("action", action);
+					resultData.PutExtra(ExtraSaveToAlbum, saveToAlbum);
+					SetResult(Result.Ok, resultData);
+				}
 
-        private static string GetUniquePath(string folder, string name, bool isPhoto)
-        {
-            var ext = Path.GetExtension(name);
-            if (ext == string.Empty)
-                ext = ((isPhoto) ? ".jpg" : ".mp4");
+				Finish();
+			}
+		}
 
-            name = Path.GetFileNameWithoutExtension(name);
+		static Task<bool> TryMoveFileAsync(Context context, Uri url, Uri path, bool isPhoto, bool saveToAlbum)
+		{
+			var moveTo = GetLocalPath(path);
+			return GetFileForUriAsync(context, url, isPhoto, false).ContinueWith(t =>
+			{
+				if (t.Result.Item1 == null)
+					return false;
 
-            var nname = name + ext;
-            var i = 1;
-            while (File.Exists(Path.Combine(folder, nname)))
-                nname = name + "_" + (i++) + ext;
+				try
+				{
+					if (url.Scheme == "content")
+						context.ContentResolver.Delete(url, null, null);
+				}
+				catch (Exception ex)
+				{
+					System.Diagnostics.Debug.WriteLine("Unable to delete content resolver file: " + ex.Message);
+				}
 
-            return Path.Combine(folder, nname);
-        }
+				try
+				{
+					File.Delete(moveTo);
+				}
+				catch (Exception ex)
+				{
+					System.Diagnostics.Debug.WriteLine("Unable to delete normal file: " + ex.Message);
+				}
+
+				try
+				{
+					File.Move(t.Result.Item1, moveTo);
+				}
+				catch (Exception ex)
+				{
+					System.Diagnostics.Debug.WriteLine("Unable to move files: " + ex.Message);
+				}
+
+				return true;
+			}, TaskScheduler.Default);
+		}
+
+		private static int GetVideoQuality(VideoQuality videoQuality)
+		{
+			switch (videoQuality)
+			{
+				case VideoQuality.Medium:
+				case VideoQuality.High:
+					return 1;
+
+				default:
+					return 0;
+			}
+		}
+
+		private static string GetUniquePath(string folder, string name, bool isPhoto)
+		{
+			var ext = Path.GetExtension(name);
+			if (ext == string.Empty)
+				ext = ((isPhoto) ? ".jpg" : ".mp4");
+
+			name = Path.GetFileNameWithoutExtension(name);
+
+			var nname = name + ext;
+			var i = 1;
+			while (File.Exists(Path.Combine(folder, nname)))
+				nname = name + "_" + (i++) + ext;
+
+			return Path.Combine(folder, nname);
+		}
 
 		/// <summary>
 		/// Try go get output file
@@ -440,80 +442,80 @@ namespace Plugin.Media
 		/// <param name="isPhoto"></param>
 		/// <param name="saveToAlbum"></param>
 		/// <returns></returns>
-        public static Uri GetOutputMediaFile(Context context, string subdir, string name, bool isPhoto, bool saveToAlbum)
-        {
-            subdir = subdir ?? string.Empty;
+		public static Uri GetOutputMediaFile(Context context, string subdir, string name, bool isPhoto, bool saveToAlbum)
+		{
+			subdir = subdir ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
-                if (isPhoto)
-                    name = "IMG_" + timestamp + ".jpg";
-                else
-                    name = "VID_" + timestamp + ".mp4";
-            }
+			if (string.IsNullOrWhiteSpace(name))
+			{
+				var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+				if (isPhoto)
+					name = "IMG_" + timestamp + ".jpg";
+				else
+					name = "VID_" + timestamp + ".mp4";
+			}
 
-            var mediaType = (isPhoto) ? Environment.DirectoryPictures : Environment.DirectoryMovies;
-            var directory = saveToAlbum ? Environment.GetExternalStoragePublicDirectory(mediaType) : context.GetExternalFilesDir(mediaType);
-            using (var mediaStorageDir = new Java.IO.File(directory, subdir))
-            {
-                if (!mediaStorageDir.Exists())
-                {
-                    if (!mediaStorageDir.Mkdirs())
-                        throw new IOException("Couldn't create directory, have you added the WRITE_EXTERNAL_STORAGE permission?");
+			var mediaType = (isPhoto) ? Environment.DirectoryPictures : Environment.DirectoryMovies;
+			var directory = saveToAlbum ? Environment.GetExternalStoragePublicDirectory(mediaType) : context.GetExternalFilesDir(mediaType);
+			using (var mediaStorageDir = new Java.IO.File(directory, subdir))
+			{
+				if (!mediaStorageDir.Exists())
+				{
+					if (!mediaStorageDir.Mkdirs())
+						throw new IOException("Couldn't create directory, have you added the WRITE_EXTERNAL_STORAGE permission?");
 
-                    if (!saveToAlbum)
-                    {
-                        // Ensure this media doesn't show up in gallery apps
-                        using (var nomedia = new Java.IO.File(mediaStorageDir, ".nomedia"))
-                            nomedia.CreateNewFile();
-                    }
-                }
+					if (!saveToAlbum)
+					{
+						// Ensure this media doesn't show up in gallery apps
+						using (var nomedia = new Java.IO.File(mediaStorageDir, ".nomedia"))
+							nomedia.CreateNewFile();
+					}
+				}
 
-                return Uri.FromFile(new Java.IO.File(GetUniquePath(mediaStorageDir.Path, name, isPhoto)));
-            }
-        }
+				return Uri.FromFile(new Java.IO.File(GetUniquePath(mediaStorageDir.Path, name, isPhoto)));
+			}
+		}
 
-        internal static Task<Tuple<string, bool>> GetFileForUriAsync(Context context, Uri uri, bool isPhoto, bool saveToAlbum)
-        {
-            var tcs = new TaskCompletionSource<Tuple<string, bool>>();
+		internal static Task<Tuple<string, bool>> GetFileForUriAsync(Context context, Uri uri, bool isPhoto, bool saveToAlbum)
+		{
+			var tcs = new TaskCompletionSource<Tuple<string, bool>>();
 
-            if (uri.Scheme == "file")
-                tcs.SetResult(new Tuple<string, bool>(new System.Uri(uri.ToString()).LocalPath, false));
-            else if (uri.Scheme == "content")
-            {
-                Task.Factory.StartNew(() =>
-                {
-                    ICursor cursor = null;
-                    try
-                    {
-                        string[] proj = null;
-                        if ((int)Build.VERSION.SdkInt >= 22)
-                            proj = new[] { MediaStore.MediaColumns.Data };
+			if (uri.Scheme == "file")
+				tcs.SetResult(new Tuple<string, bool>(new System.Uri(uri.ToString()).LocalPath, false));
+			else if (uri.Scheme == "content")
+			{
+				Task.Factory.StartNew(() =>
+				{
+					ICursor cursor = null;
+					try
+					{
+						string[] proj = null;
+						if ((int)Build.VERSION.SdkInt >= 22)
+							proj = new[] { MediaStore.MediaColumns.Data };
 
-                        cursor = context.ContentResolver.Query(uri, proj, null, null, null);
-                        if (cursor == null || !cursor.MoveToNext())
-                            tcs.SetResult(new Tuple<string, bool>(null, false));
-                        else
-                        {
-                            var column = cursor.GetColumnIndex(MediaStore.MediaColumns.Data);
-                            string contentPath = null;
+						cursor = context.ContentResolver.Query(uri, proj, null, null, null);
+						if (cursor == null || !cursor.MoveToNext())
+							tcs.SetResult(new Tuple<string, bool>(null, false));
+						else
+						{
+							var column = cursor.GetColumnIndex(MediaStore.MediaColumns.Data);
+							string contentPath = null;
 
-                            if (column != -1)
-                                contentPath = cursor.GetString(column);
+							if (column != -1)
+								contentPath = cursor.GetString(column);
 
 
 
-                            // If they don't follow the "rules", try to copy the file locally
+							// If they don't follow the "rules", try to copy the file locally
 							if (contentPath == null || !contentPath.StartsWith("file", StringComparison.InvariantCultureIgnoreCase))
-                            {
+							{
 								string fileName = null;
 								try
 								{
 									fileName = Path.GetFileName(contentPath);
 								}
-								catch(Exception ex)
-								{ 
+								catch (Exception ex)
+								{
 									System.Diagnostics.Debug.WriteLine("Unable to get file path name, using new unique " + ex);
 								}
 
@@ -521,136 +523,149 @@ namespace Plugin.Media
 								var outputPath = GetOutputMediaFile(context, "temp", fileName, isPhoto, false);
 
 								try
-                                {
-                                    using (var input = context.ContentResolver.OpenInputStream(uri))
-                                        using (var output = File.Create(outputPath.Path))
-                                            input.CopyTo(output);
+								{
+									using (var input = context.ContentResolver.OpenInputStream(uri))
+									using (var output = File.Create(outputPath.Path))
+										input.CopyTo(output);
 
-                                    contentPath = outputPath.Path;
-                                }
-                                catch (Java.IO.FileNotFoundException fnfEx)
-                                {
-                                    // If there's no data associated with the uri, we don't know
-                                    // how to open this. contentPath will be null which will trigger
-                                    // MediaFileNotFoundException.
+									contentPath = outputPath.Path;
+								}
+								catch (Java.IO.FileNotFoundException fnfEx)
+								{
+									// If there's no data associated with the uri, we don't know
+									// how to open this. contentPath will be null which will trigger
+									// MediaFileNotFoundException.
 									System.Diagnostics.Debug.WriteLine("Unable to save picked file from disk " + fnfEx);
-                                }
-                            }
+								}
+							}
 
-                            tcs.SetResult(new Tuple<string, bool>(contentPath, false));
-                        }
-                    }
-                    finally
-                    {
-                        if (cursor != null)
-                        {
-                            cursor.Close();
-                            cursor.Dispose();
-                        }
-                    }
-                }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
-            }
-            else
-                tcs.SetResult(new Tuple<string, bool>(null, false));
+							tcs.SetResult(new Tuple<string, bool>(contentPath, false));
+						}
+					}
+					finally
+					{
+						if (cursor != null)
+						{
+							cursor.Close();
+							cursor.Dispose();
+						}
+					}
+				}, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
+			}
+			else
+				tcs.SetResult(new Tuple<string, bool>(null, false));
 
-            return tcs.Task;
-        }
+			return tcs.Task;
+		}
 
-        private static string GetLocalPath(Uri uri) =>  new System.Uri(uri.ToString()).LocalPath;
-        
+		private static string GetLocalPath(Uri uri) => new System.Uri(uri.ToString()).LocalPath;
 
-        private static Task<T> TaskFromResult<T>(T result)
-        {
-            var tcs = new TaskCompletionSource<T>();
-            tcs.SetResult(result);
-            return tcs.Task;
-        }
 
-        private static void OnMediaPicked(MediaPickedEventArgs e) =>
+		private static Task<T> TaskFromResult<T>(T result)
+		{
+			var tcs = new TaskCompletionSource<T>();
+			tcs.SetResult(result);
+			return tcs.Task;
+		}
+
+		private static void OnMediaPicked(MediaPickedEventArgs e) =>
 			MediaPicked?.Invoke(null, e);
-        
+
 
 		/// <summary>
 		/// Scan completed
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="uri"></param>
-        public void OnScanCompleted(string path, Uri uri) =>
+		public void OnScanCompleted(string path, Uri uri) =>
 			Console.WriteLine("scan complete: " + path);
-        
+
 		/// <summary>
 		/// On Destroy
 		/// </summary>
-        protected override void OnDestroy()
-        {
-            if(!completed)
-            {
-                DeleteOutputFile();
-            }
-            base.OnDestroy();
-        }
-    }
+		protected override void OnDestroy()
+		{
+			if (!completed)
+			{
+				DeleteOutputFile();
+			}
+			base.OnDestroy();
+		}
 
-    internal class MediaPickedEventArgs
-        : EventArgs
-    {
-        public MediaPickedEventArgs(int id, Exception error)
-        {
-            if (error == null)
-                throw new ArgumentNullException("error");
+		#region Visitable
 
-            RequestId = id;
-            Error = error;
-        }
+		/// <summary>
+		/// Passes MediaPickerActivity's private members to classes.
+		/// </summary>
+		/// <param name="visitor">The visitor.</param>
+		public void Accept(IVisitor visitor) =>
+			((IPickerActivityVisitor) visitor).Visit(ref path, Touch, GetLocalPath, OnMediaPicked);
 
-        public MediaPickedEventArgs(int id, bool isCanceled, MediaFile media = null)
-        {
-            RequestId = id;
-            IsCanceled = isCanceled;
-            if (!IsCanceled && media == null)
-                throw new ArgumentNullException("media");
+		public T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
 
-            Media = media;
-        }
+		#endregion
+	}
 
-        public int RequestId
-        {
-            get;
-            private set;
-        }
+	internal class MediaPickedEventArgs
+		: EventArgs
+	{
+		public MediaPickedEventArgs(int id, Exception error)
+		{
+			if (error == null)
+				throw new ArgumentNullException("error");
 
-        public bool IsCanceled
-        {
-            get;
-            private set;
-        }
+			RequestId = id;
+			Error = error;
+		}
 
-        public Exception Error
-        {
-            get;
-            private set;
-        }
+		public MediaPickedEventArgs(int id, bool isCanceled, MediaFile media = null)
+		{
+			RequestId = id;
+			IsCanceled = isCanceled;
+			if (!IsCanceled && media == null)
+				throw new ArgumentNullException("media");
 
-        public MediaFile Media
-        {
-            get;
-            private set;
-        }
+			Media = media;
+		}
 
-        public Task<MediaFile> ToTask()
-        {
-            var tcs = new TaskCompletionSource<MediaFile>();
+		public int RequestId
+		{
+			get;
+			private set;
+		}
 
-            if (IsCanceled)
-                tcs.SetResult(null);
-            else if (Error != null)
-                tcs.SetException(Error);
-            else
-                tcs.SetResult(Media);
+		public bool IsCanceled
+		{
+			get;
+			private set;
+		}
 
-            return tcs.Task;
-        }
+		public Exception Error
+		{
+			get;
+			private set;
+		}
 
-       
-    }
+		public MediaFile Media
+		{
+			get;
+			private set;
+		}
+
+		public Task<MediaFile> ToTask()
+		{
+			var tcs = new TaskCompletionSource<MediaFile>();
+
+			if (IsCanceled)
+				tcs.SetResult(null);
+			else if (Error != null)
+				tcs.SetException(Error);
+			else
+				tcs.SetResult(Media);
+
+			return tcs.Task;
+		}
+
+
+	}
 }
