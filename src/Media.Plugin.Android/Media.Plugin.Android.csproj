@@ -70,9 +70,7 @@
     <Compile Include="..\Media.Plugin\CrossMedia.cs">
       <Link>CrossMedia.cs</Link>
     </Compile>
-    <Compile Include="Extras\Abstractions\ICameraActionVisitable.cs" />
-    <Compile Include="Extras\Abstractions\ICameraActionVisitor.cs" />
-    <Compile Include="Extras\Abstractions\ICameraStateVisitor.cs" />
+    <Compile Include="Extras\Abstractions\IAndroidBaseVisitor.cs" />
     <Compile Include="Extras\Abstractions\IPickerActivityVisitor.cs" />
     <Compile Include="Extras\CameraWithoutConfirmation\AndroidBaseVisitor.cs" />
     <Compile Include="Extras\CameraWithoutConfirmation\Handlers\CameraDeviceStateHandler.cs" />

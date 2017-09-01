@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Android.Hardware.Camera2;
 using Plugin.Media.Abstractions.Extras;
 using Plugin.Media.Extras.Abstractions;
@@ -7,56 +8,82 @@ using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 
 namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 {
-	public class CameraDeviceStateHandler : CameraDevice.StateCallback, IVisitableReturns, IVisitor
+	internal class CameraDeviceStateHandler : CameraDevice.StateCallback, IAndroidBaseVisitor
 	{
-		private CameraDevice _cameraDevice;
-		private AndroidBaseVisitor _androidBaseVisitor;
+		private readonly IVisitable _visitable;
 
 		private Semaphore _cameraOpenCloseLock;
 
-		public CameraDeviceStateHandler(ICameraStateVisitor cameraStateVisitor)
+		public CameraDeviceStateHandler(IVisitable visitable)
 		{
-			Visit(cameraStateVisitor as AndroidBaseVisitor);
+			_visitable = visitable;
 
-			_androidBaseVisitor.Accept(this);   // Gets AndroidBaseVisitor's private members
+			((AndroidBaseVisitor)_visitable).Accept(this);   // Gets AndroidBaseVisitor's private members
 		}
 
-		public override void OnDisconnected(CameraDevice camera)
+		#region Camera States
+
+		private readonly CameraDeviceStateEventArgs _cameraDeviceStateEventArgs = new CameraDeviceStateEventArgs();
+
+		public override void OnOpened(CameraDevice camera)
 		{
-			throw new System.NotImplementedException();
+			_cameraOpenCloseLock.Release();
+
+			_cameraDeviceStateEventArgs.Camera = camera;
+			OnOpened(this, _cameraDeviceStateEventArgs);
 		}
 
 		public override void OnError(CameraDevice camera, CameraError error)
 		{
-			throw new System.NotImplementedException();
+			_cameraOpenCloseLock.Release();
+
+			camera.Close();
+
+			_cameraDeviceStateEventArgs.Camera = null;
+			_cameraDeviceStateEventArgs.Error = error;
+			OnError(this, _cameraDeviceStateEventArgs);
 		}
 
-		public override void OnOpened(CameraDevice camera)
+		public override void OnDisconnected(CameraDevice camera)
 		{
-			_cameraDevice = camera;
+			_cameraOpenCloseLock.Release();
 
-			Accept(_androidBaseVisitor);
+			camera.Close();
+
+			_cameraDeviceStateEventArgs.Camera = null;
+			OnDisconnedted(this, _cameraDeviceStateEventArgs);
 		}
 
-		public T Accept<T>(IVisitor<T> visitor)
-		{
-			(visitor as ICameraStateVisitor).Visit(_cameraDevice);
+		public event EventHandler<CameraDeviceStateEventArgs> Opened;
+		public event EventHandler<CameraDeviceStateEventArgs> Error;
+		public event EventHandler<CameraDeviceStateEventArgs> Disconnected;
 
-			// ToDo: What to do about return type?
-			// return T;
-			throw new NotImplementedException();
-		}
+		public void OnOpened(object sender, CameraDeviceStateEventArgs args) => Opened?.Invoke(sender, args);
+		public void OnError(object sender, CameraDeviceStateEventArgs args) => Error?.Invoke(sender, args);
+		public void OnDisconnedted(object sender, CameraDeviceStateEventArgs args) => Disconnected?.Invoke(sender, args);
 
-		public void Visit(ICameraActionVisitable visitable) => _androidBaseVisitor = visitable as AndroidBaseVisitor;
+		#endregion
+
+		#region Visitor
+		
+		/// <inheritdoc />
+		/// <summary>
+		/// Gets <see cref="T:Plugin.Media.Extras.CameraWithoutConfirmation.AndroidBaseVisitor" />'s private members.
+		/// </summary>
+		/// <param name="cameraOpenCloseLock">The camera open close lock.</param>
 		public void Visit(Semaphore cameraOpenCloseLock) => _cameraOpenCloseLock = cameraOpenCloseLock;
-		public void Accept(IVisitor visitor)
-		{
-			throw new System.NotImplementedException();
-		}
 
 		public void Visit(IVisitable visitable)
 		{
-			
-		}
+
+		}		
+		
+		#endregion
+	}
+
+	internal class CameraDeviceStateEventArgs : EventArgs
+	{
+		public CameraDevice Camera { get; set; }
+		public CameraError Error { get; set; }
 	}
 }

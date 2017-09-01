@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using AndroidSize = Android.Util.Size;
@@ -24,7 +23,7 @@ using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 namespace Plugin.Media.Extras.CameraWithoutConfirmation
 {
 	public abstract class AndroidBaseVisitor : BaseVisitor<Task<MediaFile>>, ICameraVisitor<Task<MediaFile>>,
-		ICameraStateVisitor, IVisitable
+		IVisitable
 	{
 		private readonly Activity _currentActivity = CrossCurrentActivity.Current.Activity;
 
@@ -56,9 +55,9 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 
 		protected AndroidBaseVisitor(StoreMediaOptions options) : base(options)
 		{
-			StoreOptions = (StoreCameraMediaOptions) Options;
+			StoreOptions = (StoreCameraMediaOptions)Options;
 
-			Manager = (CameraManager) _currentActivity.GetSystemService(Context.CameraService);
+			Manager = (CameraManager)_currentActivity.GetSystemService(Context.CameraService);
 
 			// Handlers
 			_cameraDeviceStateHandler = new CameraDeviceStateHandler(this);
@@ -88,11 +87,11 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 
 
 				StreamConfigurationMap map =
-					(StreamConfigurationMap) CameraCharacteristics.Get(CameraCharacteristics.ScalerStreamConfigurationMap);
-				AndroidSize[] imageSupportedSizesAndroid = map.GetOutputSizes((int) ImageFormatType.Jpeg);
+					(StreamConfigurationMap)CameraCharacteristics.Get(CameraCharacteristics.ScalerStreamConfigurationMap);
+				AndroidSize[] imageSupportedSizesAndroid = map.GetOutputSizes((int)ImageFormatType.Jpeg);
 
 				AndroidSize largestSizeAndroid = imageSupportedSizesAndroid
-					.OrderByDescending(droidSize => (long) droidSize.Height * droidSize.Width)
+					.OrderByDescending(droidSize => (long)droidSize.Height * droidSize.Width)
 					.FirstOrDefault();
 
 				LargestImageResolution = new Size(largestSizeAndroid.Width, largestSizeAndroid.Height);
@@ -109,12 +108,6 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 			// No need to return anything as it only prepares camera to be used by Child
 			return Task.FromResult<MediaFile>(null);
 		}
-
-		/// <summary>
-		/// Receives <see cref="CameraDevice"/> from Camera Device handler.
-		/// </summary>
-		/// <param name="cameraDevice">The camera device.</param>
-		public void Visit(CameraDevice cameraDevice) => CameraDevice = cameraDevice;
 
 		private void FindCameraProperties(CameraChoice defaultCamera)
 		{
@@ -137,8 +130,8 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 				foreach (string camId in Manager.GetCameraIdList())
 				{
 					CameraCharacteristics cameraCharacteristics = Manager.GetCameraCharacteristics(camId);
-					Integer facing = (Integer) cameraCharacteristics.Get(CameraCharacteristics.LensFacing);
-					if (facing != null && facing == Integer.ValueOf((int) lensFacing))
+					Integer facing = (Integer)cameraCharacteristics.Get(CameraCharacteristics.LensFacing);
+					if (facing != null && facing == Integer.ValueOf((int)lensFacing))
 					{
 						CameraCharacteristics = cameraCharacteristics;
 						CameraId = camId;
@@ -170,6 +163,39 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 		}
 
 		/// <summary>
+		/// Gets the camera.
+		/// </summary>
+		/// <returns>Task&lt;CameraDevice&gt;: CameraDevice.</returns>
+		protected Task<CameraDevice> GetCamera()
+		{
+			var tcs = new TaskCompletionSource<CameraDevice>();
+
+			_cameraDeviceStateHandler.Opened += CameraDeviceStateHandler;
+			_cameraDeviceStateHandler.Error += CameraDeviceStateHandler;
+			_cameraDeviceStateHandler.Disconnected += CameraDeviceStateHandler;
+
+			// ToDo: CameraDevice.OpenCamera()
+
+			return tcs.Task;
+
+			void CameraDeviceStateHandler(object sender, CameraDeviceStateEventArgs args)
+			{
+				try
+				{
+					tcs.SetResult(args.Camera);
+				}
+				finally
+				{
+					_cameraDeviceStateHandler.Opened -= CameraDeviceStateHandler;
+					_cameraDeviceStateHandler.Error -= CameraDeviceStateHandler;
+					_cameraDeviceStateHandler.Disconnected -= CameraDeviceStateHandler;
+				}
+			}
+		}
+
+		#region Visitable
+
+		/// <summary>
 		/// Passes private members to handlers.
 		/// </summary>
 		/// <param name="visitor">Handler.</param>
@@ -180,9 +206,10 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 				case IPickerActivityVisitor pickerActivityVisitor:
 					pickerActivityVisitor.Visit(CameraBackgroundHandler, MediaPickerActivity);
 
-					MediaPickerActivity.Accept(pickerActivityVisitor); // Passes private members of MediaPickerActivity
+					MediaPickerActivity.Accept(pickerActivityVisitor); // Passes MediaPickerActivity's private members
 					break;
 				case CameraDeviceStateHandler cameraDeviceStateHandler:
+					// Passes private members to CameraDeviceStateHandler
 					cameraDeviceStateHandler.Visit(_cameraOpenCloseLock);
 					break;
 				default:
@@ -190,5 +217,7 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 					break;
 			}
 		}
+
+		#endregion
 	}
 }

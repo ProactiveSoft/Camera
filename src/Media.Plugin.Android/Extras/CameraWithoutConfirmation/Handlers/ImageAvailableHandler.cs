@@ -40,7 +40,7 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 		public ImageAvailableHandler(IVisitable visitable)
 		{
 			visitable.Accept(this); // Gets camera options from NoConfirmTakePhotoVisitor
-			((AndroidBaseVisitor) visitable).Accept(this); // Gets private members of AndroidBaseVisitor
+			((AndroidBaseVisitor)visitable).Accept(this); // Gets private members of AndroidBaseVisitor
 		}
 
 		public void OnImageAvailable(ImageReader reader) =>
@@ -62,7 +62,7 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 		public void Visit(Handler cameraBackgroundHandler, Activity mediaPickerActivity)
 		{
 			_cameraBackgroundHandler = cameraBackgroundHandler;
-			_mediaPickerActivity = (MediaPickerActivity) mediaPickerActivity;
+			_mediaPickerActivity = (MediaPickerActivity)mediaPickerActivity;
 		}
 
 		/// <inheritdoc />
@@ -112,7 +112,7 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 
 				StoreImage();
 
-				NotifyImageStoredAsync();
+				NotifyImageStored();
 
 				#region Local functions
 
@@ -139,6 +139,13 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 					}
 				}
 
+				void NotifyImageStored()
+				{
+					MediaPickedEventArgs args = GetMediaFile();
+
+					_imageAvailableHandler._onMediaPicked(args);
+				}
+
 				MediaPickedEventArgs GetMediaFile()
 				{
 					string albumPath = _imageAvailableHandler._newMediaFileUri.ToString(),
@@ -151,15 +158,6 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 					}
 
 					return new MediaPickedEventArgs(default(int), new MediaFileNotFoundException(albumPath));
-				}
-
-				async Task NotifyImageStoredAsync()
-				{
-					MediaPickedEventArgs args = GetMediaFile();
-
-					await Task.Delay(1); // Give some time for handler to attach
-
-					_imageAvailableHandler._onMediaPicked(args);
 				}
 
 				#endregion

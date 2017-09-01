@@ -20,7 +20,12 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 		public NoConfirmTakePhotoVisitor(StoreMediaOptions options) : base(options) =>
 			_imageAvailableHandler = new ImageAvailableHandler(this);
 
-
+		/// <inheritdoc />
+		/// <summary>
+		/// Visits the specified data.
+		/// </summary>
+		/// <param name="data">Data related to taking photo.</param>
+		/// <returns>Task&lt;MediaFile&gt;: Picked image.</returns>
 		public override Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
 		{
 			base.Visit(data);
@@ -33,15 +38,15 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 
 
 			#region Local functions
-			
+
 			Task<MediaFile> TakePhoto()
 			{
-				// ToDo: Send Capture command to camera
-				// CameraCaptureSession.Capture(CaptureRequest)
-
 				var tcs = new TaskCompletionSource<MediaFile>();
 
 				MediaPickerActivity.MediaPicked += ImageStoredHandler;
+
+				// ToDo: Send Capture command to camera
+				// CameraCaptureSession.Capture(CaptureRequest)
 
 				return tcs.Task;
 
@@ -62,8 +67,8 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 				}
 
 				#endregion
-			}			
-			
+			}
+
 			#endregion
 		}
 
