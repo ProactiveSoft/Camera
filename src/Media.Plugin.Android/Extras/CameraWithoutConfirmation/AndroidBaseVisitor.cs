@@ -29,20 +29,17 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 
 		//+ Camera
 		protected readonly CameraManager Manager;
-
 		protected CameraDevice CameraDevice;
 		private readonly CameraDeviceStateHandler _cameraDeviceStateHandler;
 
 		//+ Camera properties
 		protected readonly StoreCameraMediaOptions StoreOptions;
-
 		protected string CameraId;
 		protected CameraCharacteristics CameraCharacteristics;
 		protected Size LargestImageResolution;
 
 		//+ Camera background thread
 		private HandlerThread _cameraThread;
-
 		protected internal Handler CameraBackgroundHandler;
 
 		internal static readonly MediaPickerActivity MediaPickerActivity = new MediaPickerActivity();
@@ -61,6 +58,11 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 
 			// Handlers
 			_cameraDeviceStateHandler = new CameraDeviceStateHandler(this);
+
+			// Unsubscribe in Dispose()
+			_cameraDeviceStateHandler.Opened += CameraDeviceStateHandler_CameraStateChanged;
+			_cameraDeviceStateHandler.Disconnected += CameraDeviceStateHandler_CameraStateChanged;
+			_cameraDeviceStateHandler.Error += CameraDeviceStateHandler_CameraStateChanged;
 		}
 
 		/// <summary>
@@ -192,6 +194,9 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 				}
 			}
 		}
+
+		private void CameraDeviceStateHandler_CameraStateChanged(object sender, CameraDeviceStateEventArgs args) =>
+			CameraDevice = args.Camera;
 
 		#region Visitable
 

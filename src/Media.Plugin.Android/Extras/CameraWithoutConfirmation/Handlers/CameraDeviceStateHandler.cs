@@ -31,6 +31,9 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 
 			_cameraDeviceStateEventArgs.Camera = camera;
 			OnOpened(this, _cameraDeviceStateEventArgs);
+			
+			// ToDo: Start preview/capturing
+			// Start it from AndroidBaseVisitor or NoConfirmTakePhotoVisitor
 		}
 
 		public override void OnError(CameraDevice camera, CameraError error)
@@ -42,6 +45,9 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 			_cameraDeviceStateEventArgs.Camera = null;
 			_cameraDeviceStateEventArgs.Error = error;
 			OnError(this, _cameraDeviceStateEventArgs);
+
+			// ToDo: Stop Activity/Service
+			// Start it from AndroidBaseVisitor or NoConfirmTakePhotoVisitor
 		}
 
 		public override void OnDisconnected(CameraDevice camera)
