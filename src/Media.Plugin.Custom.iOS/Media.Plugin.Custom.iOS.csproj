@@ -5,48 +5,31 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{2882AEEB-D4CD-4EB9-8A6C-6653B33681F0}</ProjectGuid>
+    <ProjectGuid>{8482A9B2-1A4A-4204-AAE1-A031C3329DDA}</ProjectGuid>
     <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
-    <RootNamespace>Plugin.Media</RootNamespace>
+    <RootNamespace>Media.Plugin.Custom.iOS</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
-    <AssemblyName>Plugin.Media</AssemblyName>
+    <AssemblyName>Media.Plugin.Custom.iOS</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\iPhone\Debug</OutputPath>
-    <DefineConstants>DEBUG;__UNIFIED__;__MOBILE__;__IOS__</DefineConstants>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <MtouchDebug>true</MtouchDebug>
-    <CodesignKey>iPhone Developer</CodesignKey>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>none</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\iPhone\Release</OutputPath>
+    <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <CodesignKey>iPhone Developer</CodesignKey>
-    <DocumentationFile>bin\iPhone\Release\Plugin.Media.xml</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\Media.Plugin\CrossMedia.cs">
-      <Link>CrossMedia.cs</Link>
-    </Compile>
-    <Compile Include="MediaImplementation.cs" />
-    <Compile Include="MediaPickerController.cs" />
-    <Compile Include="MediaPickerDelegate.cs" />
-    <Compile Include="MediaPickerPopoverDelegate.cs" />
-    <Compile Include="NSDataStream.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UIImageExtensions.cs" />
-    <Compile Include="PhotoLibraryAccess.cs" />
-  </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
@@ -54,16 +37,22 @@
     <Reference Include="Xamarin.iOS" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Media.Plugin.iOS.csproj" />
+    <Folder Include="Resources\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Media.Plugin.Abstractions\Media.Plugin.Abstractions.csproj">
-      <Project>{fbef1e96-bbb6-43b8-9c56-2c01088c4d48}</Project>
+      <Project>{0e3efbde-5210-47d7-9cbf-d5130091a361}</Project>
       <Name>Media.Plugin.Abstractions</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\Media.Plugin.iOS\Media.Plugin.iOS.csproj">
+      <Project>{2882aeeb-d4cd-4eb9-8a6c-6653b33681f0}</Project>
+      <Name>Media.Plugin.iOS</Name>
+      <IsAppExtension>false</IsAppExtension>
+      <IsWatchApp>false</IsWatchApp>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="..\Media.Plugin.Shared\Media.Plugin.Shared.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />

@@ -11,22 +11,23 @@
 // </copyright>
 // <summary></summary>
 // ***********************************************************************
-using System.Threading;
-using Plugin.Media.Abstractions.Extras;
-using Plugin.Media.Extras.CameraWithoutConfirmation;
 
-namespace Plugin.Media.Extras.Abstractions
+using System.Threading;
+using Media.Plugin.Custom.Android.CameraWithoutConfirmation;
+using Plugin.Media.Abstractions.Custom;
+
+namespace Media.Plugin.Custom.Android.Abstractions
 {
 	/// <summary>
 	/// Visitor to collect <see cref="AndroidBaseVisitor"/>'s private members
 	/// </summary>
-	/// <seealso cref="Plugin.Media.Abstractions.Extras.IVisitor" />
+	/// <seealso cref="IVisitor" />
 	public interface IAndroidBaseVisitor : IVisitor
 	{
 		/// <summary>
 		/// Gets <see cref="AndroidBaseVisitor"/>'s private members.
 		/// </summary>
 		/// <param name="cameraOpenCloseLock">The camera open close lock.</param>
-		void Visit(Semaphore cameraOpenCloseLock);
+		void Visit(SemaphoreSlim cameraOpenCloseLock);
 	}
 }

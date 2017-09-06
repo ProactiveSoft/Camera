@@ -14,7 +14,7 @@ using System.Text.RegularExpressions;
 using Plugin.CurrentActivity;
 using System.Collections.Generic;
 using System.Linq;
-using Plugin.Media.Abstractions.Extras;
+using Plugin.Media.Abstractions.Custom;
 
 namespace Plugin.Media
 {

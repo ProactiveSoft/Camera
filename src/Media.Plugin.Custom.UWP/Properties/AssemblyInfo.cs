@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -8,4 +7,3 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Plugin.Media")]
 [assembly: AssemblyProduct("Plugin.Media")]
 [assembly: ComVisible(false)]
-[assembly: InternalsVisibleTo("Media.Plugin.Custom.UWP")]

@@ -9,7 +9,7 @@ using Windows.Storage.Pickers;
 
 using Plugin.Media.Abstractions;
 using System.Diagnostics;
-using Plugin.Media.Abstractions.Extras;
+using Plugin.Media.Abstractions.Custom;
 
 namespace Plugin.Media
 {
@@ -372,7 +372,12 @@ namespace Plugin.Media
             }
         }
 
-	    public Task<MediaFile> Accept(IVisitor visitor)
+	    public void Accept(IVisitor visitor)
+	    {
+		    throw new NotImplementedException();
+	    }
+
+	    public T Accept<T>(IVisitor<T> visitor)
 	    {
 		    throw new NotImplementedException();
 	    }

@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
 
-namespace Plugin.Media.Abstractions.Extras
+namespace Plugin.Media.Abstractions.Custom
 {
 	public interface IVisitor
 	{
@@ -11,7 +10,7 @@ namespace Plugin.Media.Abstractions.Extras
 	/// <summary>
 	/// Visitor for passing camera options.
 	/// </summary>
-	/// <seealso cref="Plugin.Media.Abstractions.Extras.IVisitor" />
+	/// <seealso cref="IVisitor" />
 	public interface ICameraOptionsVisitor : IVisitor
 	{
 		/// <summary>
@@ -34,12 +33,17 @@ namespace Plugin.Media.Abstractions.Extras
 	public abstract class BaseVisitor<T> : IVisitor<T>
 	{
 		protected readonly StoreMediaOptions Options;
+		protected readonly OperationType CameraOperationType;
 
 		protected BaseVisitor()
 		{
 		}
 
-		protected BaseVisitor(StoreMediaOptions options) => Options = options;
+		protected BaseVisitor(StoreMediaOptions options, OperationType cameraOperationType)
+		{
+			Options = options;
+			CameraOperationType = cameraOperationType;
+		}
 
 		public abstract T Visit(IVisitableReturns visitable);
 		public abstract void Visit(IVisitable visitable);

@@ -7,14 +7,14 @@ using Java.IO;
 using Java.Lang;
 using Java.Nio;
 using Plugin.CurrentActivity;
-using JavaObject = Java.Lang.Object;
+using Plugin.Media;
 using Plugin.Media.Abstractions;
-using Plugin.Media.Abstractions.Extras;
-using Plugin.Media.Extras.Abstractions;
+using Plugin.Media.Abstractions.Custom;
+using JavaObject = Java.Lang.Object;
 using DroidUri = Android.Net.Uri;
 using File = System.IO.File;
 
-namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
+namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers
 {
 	internal class ImageAvailableHandler : JavaObject, ImageReader.IOnImageAvailableListener, ICameraOptionsVisitor,
 		IPickerActivityVisitor
@@ -139,11 +139,11 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 					}
 				}
 
-				void NotifyImageStored()
+				Task NotifyImageStored()
 				{
 					MediaPickedEventArgs args = GetMediaFile();
 
-					_imageAvailableHandler._onMediaPicked(args);
+					return Task.Delay(1).ContinueWith(_ => _imageAvailableHandler._onMediaPicked(args));
 				}
 
 				MediaPickedEventArgs GetMediaFile()

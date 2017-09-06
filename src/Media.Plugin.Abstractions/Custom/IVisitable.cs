@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace Plugin.Media.Abstractions.Extras
+﻿namespace Plugin.Media.Abstractions.Custom
 {
 	public interface IVisitable
 	{

@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Android.Hardware.Camera2;
-using Plugin.Media.Abstractions.Extras;
-using Plugin.Media.Extras.Abstractions;
+using Media.Plugin.Custom.Android.Abstractions;
+using Plugin.Media.Abstractions.Custom;
 using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 
-namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
+namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers
 {
 	internal class CameraDeviceStateHandler : CameraDevice.StateCallback, IAndroidBaseVisitor
 	{
 		private readonly IVisitable _visitable;
 
-		private Semaphore _cameraOpenCloseLock;
+		private SemaphoreSlim _cameraOpenCloseLock;
 
 		public CameraDeviceStateHandler(IVisitable visitable)
 		{
@@ -31,8 +30,8 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 
 			_cameraDeviceStateEventArgs.Camera = camera;
 			OnOpened(this, _cameraDeviceStateEventArgs);
-			
-			// ToDo: Start preview/capturing
+
+			// Undone: Create CameraCaptureSession
 			// Start it from AndroidBaseVisitor or NoConfirmTakePhotoVisitor
 		}
 
@@ -46,7 +45,7 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 			_cameraDeviceStateEventArgs.Error = error;
 			OnError(this, _cameraDeviceStateEventArgs);
 
-			// ToDo: Stop Activity/Service
+			// Undone: Stop Activity/Service
 			// Start it from AndroidBaseVisitor or NoConfirmTakePhotoVisitor
 		}
 
@@ -71,25 +70,19 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation.Handlers
 		#endregion
 
 		#region Visitor
-		
+
 		/// <inheritdoc />
 		/// <summary>
-		/// Gets <see cref="T:Plugin.Media.Extras.CameraWithoutConfirmation.AndroidBaseVisitor" />'s private members.
+		/// Gets <see cref="T:Media.Plugin.Custom.Android.CameraWithoutConfirmation.AndroidBaseVisitor" />'s private members.
 		/// </summary>
 		/// <param name="cameraOpenCloseLock">The camera open close lock.</param>
-		public void Visit(Semaphore cameraOpenCloseLock) => _cameraOpenCloseLock = cameraOpenCloseLock;
+		public void Visit(SemaphoreSlim cameraOpenCloseLock) => _cameraOpenCloseLock = cameraOpenCloseLock;
 
 		public void Visit(IVisitable visitable)
 		{
 
-		}		
-		
-		#endregion
-	}
+		}
 
-	internal class CameraDeviceStateEventArgs : EventArgs
-	{
-		public CameraDevice Camera { get; set; }
-		public CameraError Error { get; set; }
+		#endregion
 	}
 }

@@ -14,8 +14,7 @@ using Plugin.Media.Abstractions;
 using Android.Content.PM;
 using System.Globalization;
 using Android.Support.V4.Content;
-using Plugin.Media.Abstractions.Extras;
-using Plugin.Media.Extras.Abstractions;
+using Plugin.Media.Abstractions.Custom;
 
 namespace Plugin.Media
 {

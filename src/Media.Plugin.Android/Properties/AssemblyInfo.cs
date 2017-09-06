@@ -9,7 +9,7 @@ using Android.App;
 [assembly: AssemblyTitle("Plugin.Media")]
 [assembly: AssemblyProduct("Plugin.Media")]
 [assembly: ComVisible(false)]
-
+[assembly: InternalsVisibleTo("Media.Plugin.Custom.Android")]
 
 //Permissions for android
 [assembly: UsesFeature("android.hardware.camera", Required = false)]

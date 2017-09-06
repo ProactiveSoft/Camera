@@ -2,11 +2,12 @@
 using System.Threading.Tasks;
 using Android.Graphics;
 using Android.Media;
+using Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers;
+using Plugin.Media;
 using Plugin.Media.Abstractions;
-using Plugin.Media.Abstractions.Extras;
-using Plugin.Media.Extras.CameraWithoutConfirmation.Handlers;
+using Plugin.Media.Abstractions.Custom;
 
-namespace Plugin.Media.Extras.CameraWithoutConfirmation
+namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation
 {
 	public class NoConfirmTakePhotoVisitor : AndroidBaseVisitor, IVisitable
 	{
@@ -17,36 +18,34 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 		{
 		}
 
-		public NoConfirmTakePhotoVisitor(StoreMediaOptions options) : base(options) =>
+		public NoConfirmTakePhotoVisitor(StoreMediaOptions options, OperationType cameraOperationType) : base(options, cameraOperationType) =>
 			_imageAvailableHandler = new ImageAvailableHandler(this);
 
-		/// <inheritdoc />
 		/// <summary>
-		/// Visits the specified data.
+		/// Saves the image and returns it.
 		/// </summary>
 		/// <param name="data">Data related to taking photo.</param>
 		/// <returns>Task&lt;MediaFile&gt;: Picked image.</returns>
-		public override Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
+		/// <inheritdoc />
+		public override async Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
 		{
-			base.Visit(data);
+			await base.Visit(data);
 
-			_imageReader = ImageReader.NewInstance(LargestImageResolution.Width, LargestImageResolution.Height,
-				ImageFormatType.Jpeg, 1);
+			int width = ((PhotoCamera)Camera).LargestImageResolution.Width,
+				height = ((PhotoCamera)Camera).LargestImageResolution.Height;
+			_imageReader = ImageReader.NewInstance(width, height, ImageFormatType.Jpeg, 1);
 			_imageReader.SetOnImageAvailableListener(_imageAvailableHandler, CameraBackgroundHandler);
 
-			return TakePhoto();
+			return await GetSavedPhoto();
 
 
 			#region Local functions
 
-			Task<MediaFile> TakePhoto()
+			Task<MediaFile> GetSavedPhoto()   // Gets image which has been saved after capturing
 			{
 				var tcs = new TaskCompletionSource<MediaFile>();
 
 				MediaPickerActivity.MediaPicked += ImageStoredHandler;
-
-				// ToDo: Send Capture command to camera
-				// CameraCaptureSession.Capture(CaptureRequest)
 
 				return tcs.Task;
 
@@ -86,7 +85,7 @@ namespace Plugin.Media.Extras.CameraWithoutConfirmation
 					throw new ArgumentNullException(nameof(visitor),
 						$"Pass a suitable visitor to {nameof(NoConfirmTakePhotoVisitor)} for getting its private members.");
 				case ImageAvailableHandler imageAvailableHandler:
-					imageAvailableHandler.Visit(StoreOptions);
+					imageAvailableHandler.Visit(Camera.StoreOptions);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(visitor));

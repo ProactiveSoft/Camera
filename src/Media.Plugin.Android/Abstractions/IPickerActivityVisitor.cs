@@ -1,16 +1,15 @@
 ﻿using System;
 using Android.App;
 using Android.OS;
-using Plugin.Media.Abstractions.Extras;
-using Plugin.Media.Extras.CameraWithoutConfirmation;
+using Plugin.Media.Abstractions.Custom;
 using DroidUri = Android.Net.Uri;
 
-namespace Plugin.Media.Extras.Abstractions
+namespace Plugin.Media.Abstractions
 {
 	internal interface IPickerActivityVisitor : IVisitor
 	{
 		/// <summary>
-		/// Gets private members of <see cref="AndroidBaseVisitor"/>.
+		/// Gets private members of <see cref="Media.Plugin.Custom.Android.CameraWithoutConfirmation.AndroidBaseVisitor"/>.
 		/// </summary>
 		/// <param name="cameraBackgroundHandler">The camera background handler.</param>
 		/// <param name="mediaPickerActivity">Activity to handle media picking.</param>

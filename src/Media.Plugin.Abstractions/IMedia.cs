@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Plugin.Media.Abstractions.Extras;
+using Plugin.Media.Abstractions.Custom;
 
 namespace Plugin.Media.Abstractions
 {
