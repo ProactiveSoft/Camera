@@ -1,43 +1,25 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Android.App;
 using Android.Hardware.Camera2;
 using Android.OS;
 using Android.Widget;
 using Java.Lang;
-using Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers;
 using Media.Plugin.Custom.Android.Factories;
+using Media.Plugin.Custom.Android.Handlers;
 using Plugin.CurrentActivity;
 using Plugin.Media;
 using Plugin.Media.Abstractions;
 using Plugin.Media.Abstractions.Custom;
-using AndroidSize = Android.Util.Size;
-using Camera = Media.Plugin.Custom.Android.Abstractions.Camera;
-using CameraChoice = Plugin.Media.Abstractions.CameraDevice;
 using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 
-namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation
+namespace Media.Plugin.Custom.Android.Abstractions
 {
 	public abstract class AndroidBaseVisitor : BaseVisitor<Task<MediaFile>>, ICameraVisitor<Task<MediaFile>>,
 		IVisitable
 	{
-		private readonly Activity _currentActivity = CrossCurrentActivity.Current.Activity;
-
 		//+ Camera
-		internal readonly Camera Camera;
-		protected CameraDevice CameraDevice;
-
-
-		protected readonly SemaphoreSlim CameraOpenCloseLock = new SemaphoreSlim(0, 1);
-
-
-		//+ Camera background thread
-		private HandlerThread _cameraThread;
-		protected internal Handler CameraBackgroundHandler;
-
-
-		internal static readonly MediaPickerActivity MediaPickerActivity = new MediaPickerActivity();
+		internal Camera Camera { get; }
 
 
 		protected AndroidBaseVisitor()
@@ -53,7 +35,7 @@ namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation
 		/// <param name="data">Data containing camera permission & camera options.</param>
 		/// <returns>Doesn't return anything. Task&lt;MediaFile&gt; will be returned by child.</returns>
 		/// <exception cref="System.NotSupportedException">Not supported exception when platform doesn't support camera.</exception>
-		public virtual async Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
+		public virtual Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
 		{
 			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) = data;
 
@@ -67,7 +49,8 @@ namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation
 
 				Camera.FindCameraProperties(Camera.StoreOptions.DefaultCamera);
 
-				CameraDevice = await Camera.OpenCamera(CameraOpenCloseLock, CameraBackgroundHandler);
+				// Undone: Define Facade for calling OpenCamera()  
+				//CameraDevice = await Camera.OpenCamera(CameraOpenCloseLock, CameraBackgroundHandler);
 			}
 			catch (CameraAccessException cameraAccessException)
 			{
@@ -75,11 +58,12 @@ namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation
 			}
 			catch (NullPointerException nullPointerException)
 			{
-				Toast.MakeText(_currentActivity, "App cannot use Camera because camera driver is old.", ToastLength.Long);
+				Toast.MakeText(CrossCurrentActivity.Current.Activity, "App cannot use Camera because camera driver is old.",
+					ToastLength.Long);
 			}
 
 			// No need to return anything as it only prepares camera to be used by Child
-			return default(MediaFile);
+			return Task.FromResult<MediaFile>(null);
 		}
 
 		#region Visitable
@@ -93,49 +77,22 @@ namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation
 			switch (visitor)
 			{
 				case IPickerActivityVisitor pickerActivityVisitor:
-					pickerActivityVisitor.Visit(CameraBackgroundHandler, MediaPickerActivity);
+					// Passes AndroidBaseVisitor's private members to ImageAvailableHandler
+					// ToDo: Pass AndroidBaseVisitor's private members to ImageAvailableHandler from Camera
+					//pickerActivityVisitor.Visit(CameraBackgroundHandler, MediaPickerActivity);
 
-					MediaPickerActivity.Accept(pickerActivityVisitor); // Passes MediaPickerActivity's private members
+					// Already called from ImageSaver.Run()
+					// May cause bug as new URI will not be created for new image after getting URI for 1st image
+					// MediaPickerActivity.Accept(pickerActivityVisitor); // Passes MediaPickerActivity's private members
 					break;
 				case CameraDeviceStateHandler cameraDeviceStateHandler:
+					// ToDo: Pass lock to CameraDeviceStateHandler from Camera
 					// Passes private members to CameraDeviceStateHandler
-					cameraDeviceStateHandler.Visit(CameraOpenCloseLock);
+					// cameraDeviceStateHandler.Visit(CameraOpenCloseLock);
 					break;
 				default:
 					visitor.Visit(this);
 					break;
-			}
-		}
-
-		#endregion
-
-		#region Helpers
-
-		/// <summary>
-		/// Starts the back ground thread.
-		/// </summary>
-		private void StartBackGroundThread()
-		{
-			_cameraThread = new HandlerThread("CameraBackgroundThread");
-			_cameraThread.Start();
-			CameraBackgroundHandler = new Handler(_cameraThread.Looper);
-		}
-
-		/// <summary>
-		/// Stops the background thread.
-		/// </summary>
-		private void StopBackgroundThread()
-		{
-			_cameraThread.QuitSafely();
-			try
-			{
-				_cameraThread.Join();
-				_cameraThread = null;
-				CameraBackgroundHandler = null;
-			}
-			catch (InterruptedException e)
-			{
-				e.PrintStackTrace();
 			}
 		}
 

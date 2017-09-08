@@ -2,10 +2,11 @@
 using System.Threading;
 using Android.Hardware.Camera2;
 using Media.Plugin.Custom.Android.Abstractions;
+using Media.Plugin.Custom.Android.EventArgs;
 using Plugin.Media.Abstractions.Custom;
 using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 
-namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers
+namespace Media.Plugin.Custom.Android.Handlers
 {
 	internal class CameraDeviceStateHandler : CameraDevice.StateCallback, IAndroidBaseVisitor
 	{

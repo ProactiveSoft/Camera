@@ -13,7 +13,6 @@
 // ***********************************************************************
 
 using System.Threading;
-using Media.Plugin.Custom.Android.CameraWithoutConfirmation;
 using Plugin.Media.Abstractions.Custom;
 
 namespace Media.Plugin.Custom.Android.Abstractions

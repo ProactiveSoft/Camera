@@ -6,6 +6,7 @@ using Android.OS;
 using Java.IO;
 using Java.Lang;
 using Java.Nio;
+using Media.Plugin.Custom.Android.Abstractions;
 using Plugin.CurrentActivity;
 using Plugin.Media;
 using Plugin.Media.Abstractions;
@@ -14,7 +15,7 @@ using JavaObject = Java.Lang.Object;
 using DroidUri = Android.Net.Uri;
 using File = System.IO.File;
 
-namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers
+namespace Media.Plugin.Custom.Android.Handlers
 {
 	internal class ImageAvailableHandler : JavaObject, ImageReader.IOnImageAvailableListener, ICameraOptionsVisitor,
 		IPickerActivityVisitor
@@ -67,7 +68,7 @@ namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers
 
 		/// <inheritdoc />
 		/// <summary>
-		/// Gets <see cref="T:Plugin.Media.MediaPickerActivity" /> private members.
+		/// Gets <see cref="T:Plugin.Media.MediaPickerActivity"/>'s private members.
 		/// </summary>
 		/// <param name="newMediaFileUri">Uri of new file for storing media.</param>
 		/// <param name="createMediaFile">Method to create media file.</param>
@@ -139,11 +140,13 @@ namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers
 					}
 				}
 
-				Task NotifyImageStored()
+				async Task NotifyImageStored()
 				{
 					MediaPickedEventArgs args = GetMediaFile();
 
-					return Task.Delay(1).ContinueWith(_ => _imageAvailableHandler._onMediaPicked(args));
+					await Task.Delay(1).ConfigureAwait(true);
+
+					_imageAvailableHandler._onMediaPicked(args);
 				}
 
 				MediaPickedEventArgs GetMediaFile()
@@ -154,10 +157,10 @@ namespace Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers
 					if (resultPath != null && File.Exists(resultPath))
 					{
 						var mediaFile = new MediaFile(resultPath, () => File.OpenRead(resultPath), albumPath);
-						return new MediaPickedEventArgs(default(int), false, mediaFile);
+						return new MediaPickedEventArgs(default, false, mediaFile);
 					}
 
-					return new MediaPickedEventArgs(default(int), new MediaFileNotFoundException(albumPath));
+					return new MediaPickedEventArgs(default, new MediaFileNotFoundException(albumPath));
 				}
 
 				#endregion

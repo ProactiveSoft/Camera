@@ -18,9 +18,10 @@ using Android.Content;
 using Android.Hardware.Camera2;
 using Android.OS;
 using Java.Lang;
-using Media.Plugin.Custom.Android.CameraWithoutConfirmation;
-using Media.Plugin.Custom.Android.CameraWithoutConfirmation.Handlers;
+using Media.Plugin.Custom.Android.EventArgs;
+using Media.Plugin.Custom.Android.Handlers;
 using Plugin.CurrentActivity;
+using Plugin.Media;
 using Plugin.Media.Abstractions;
 using Plugin.Media.Abstractions.Custom;
 using Boolean = Java.Lang.Boolean;
@@ -34,8 +35,12 @@ namespace Media.Plugin.Custom.Android.Abstractions
 	/// </summary>
 	internal abstract class Camera
 	{
+		#region Fields & properties
+		
+		protected readonly IVisitable Visitable;
+
 		// Undone: Make fields private & expose operations
-		//+ Camera 
+		//++ Camera2's camera 
 		/// <summary>
 		/// The Camera's manager
 		/// </summary>
@@ -45,13 +50,13 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// </summary>
 		protected CameraDevice CameraDevice;
 
-		//+ Camera handlers
+		//++ Camera handlers
 		/// <summary>
 		/// The camera device state handler
 		/// </summary>
 		protected readonly CameraDeviceStateHandler CameraDeviceStateHandler;
 
-		//+ Camera properties
+		//++ Camera properties
 		/// <summary>
 		/// The store options
 		/// </summary>
@@ -69,7 +74,50 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// The flash supported
 		/// </summary>
 		protected bool FlashSupported;
+
+
+		protected readonly MediaPickerActivity MediaPickerActivity = new MediaPickerActivity();		
 		
+		#endregion
+
+
+		#region Camera threading
+
+		private HandlerThread _cameraThread;
+		protected Handler CameraBackgroundHandler;
+
+		protected readonly SemaphoreSlim CameraOpenCloseLock = new SemaphoreSlim(0, 1);
+
+		/// <summary>
+		/// Starts the back ground thread.
+		/// </summary>
+		private void StartBackGroundThread()
+		{
+			_cameraThread = new HandlerThread("CameraBackgroundThread");
+			_cameraThread.Start();
+			CameraBackgroundHandler = new Handler(_cameraThread.Looper);
+		}
+
+		/// <summary>
+		/// Stops the background thread.
+		/// </summary>
+		private void StopBackgroundThread()
+		{
+			_cameraThread.QuitSafely();
+			try
+			{
+				_cameraThread.Join();
+				_cameraThread = null;
+				CameraBackgroundHandler = null;
+			}
+			catch (InterruptedException e)
+			{
+				e.PrintStackTrace();
+			}
+		}
+
+		#endregion
+
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Camera"/> class.
@@ -78,11 +126,12 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// <param name="visitable">The visitable.</param>
 		protected Camera(StoreMediaOptions storeOptions, IVisitable visitable)
 		{
+			Visitable = visitable;
 			StoreOptions = storeOptions as StoreCameraMediaOptions;
 
 			Manager = (CameraManager)CrossCurrentActivity.Current.Activity.GetSystemService(Context.CameraService);
 
-			CameraDeviceStateHandler = new CameraDeviceStateHandler(visitable);
+			CameraDeviceStateHandler = new CameraDeviceStateHandler(Visitable);
 		}
 
 		#region Camera properties 
@@ -136,6 +185,12 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 		#endregion
 
+		#region Camera preparations
+
+		internal abstract void SetupMediaReader(Handler cameraBackgroundHandler);
+
+		#endregion
+
 		#region Camera operations
 
 		/// <summary>
@@ -185,6 +240,10 @@ namespace Media.Plugin.Custom.Android.Abstractions
 				}
 			}
 		}
+
+		protected abstract void CreateCameraCaptureSession();
+
+		internal abstract void TakeMedia();
 
 		#endregion
 	}

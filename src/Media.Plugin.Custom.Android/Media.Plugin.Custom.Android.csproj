@@ -28,6 +28,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -64,14 +65,15 @@
   <ItemGroup>
     <Compile Include="Abstractions\Camera.cs" />
     <Compile Include="Abstractions\IAndroidBaseVisitor.cs" />
+    <Compile Include="Handlers\CameraCaptureSessionHandler.cs" />
     <Compile Include="Factories\CameraFactory.cs" />
     <Compile Include="PhotoCamera.cs" />
     <Compile Include="VideoCamera.cs" />
-    <Compile Include="CameraWithoutConfirmation\AndroidBaseVisitor.cs" />
-    <Compile Include="CameraWithoutConfirmation\Handlers\CameraDeviceStateEventArgs.cs" />
-    <Compile Include="CameraWithoutConfirmation\Handlers\CameraDeviceStateHandler.cs" />
-    <Compile Include="CameraWithoutConfirmation\Handlers\ImageAvailableHandler.cs" />
-    <Compile Include="CameraWithoutConfirmation\NoConfirmTakePhotoVisitor.cs" />
+    <Compile Include="Abstractions\AndroidBaseVisitor.cs" />
+    <Compile Include="EventArgs\CameraDeviceStateEventArgs.cs" />
+    <Compile Include="Handlers\CameraDeviceStateHandler.cs" />
+    <Compile Include="Handlers\ImageAvailableHandler.cs" />
+    <Compile Include="NoConfirmTakePhotoVisitor.cs" />
     <Compile Include="MainApplication.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
