@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Media;
@@ -113,7 +114,7 @@ namespace Media.Plugin.Custom.Android.Handlers
 
 				StoreImage();
 
-				NotifyImageStored();
+				Task.Run(NotifyImageStored);
 
 				#region Local functions
 
@@ -144,7 +145,7 @@ namespace Media.Plugin.Custom.Android.Handlers
 				{
 					MediaPickedEventArgs args = GetMediaFile();
 
-					await Task.Delay(1).ConfigureAwait(true);
+					await Task.Delay(1).ConfigureAwait(false);
 
 					_imageAvailableHandler._onMediaPicked(args);
 				}

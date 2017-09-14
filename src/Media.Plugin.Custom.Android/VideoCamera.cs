@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Android.Hardware.Camera2;
 using Android.OS;
 using Media.Plugin.Custom.Android.Abstractions;
+using Media.Plugin.Custom.Android.Factories;
+using Media.Plugin.Custom.Android.Helpers.Parameters;
 using Plugin.Media.Abstractions;
 using Plugin.Media.Abstractions.Custom;
 
@@ -15,14 +18,12 @@ namespace Media.Plugin.Custom.Android
 	{
 		internal VideoCamera(StoreMediaOptions storeOptions, IVisitable visitable) : base(storeOptions, visitable)
 		{
+			CameraOperationType = OperationType.Video;
+
+			CameraParameters = ComputerParametersFactory.CreateCameraParameters(CameraOperationType);
 		}
 
 		protected override void FindLargestResolution()
-		{
-			throw new NotImplementedException();
-		}
-
-		internal override void SetupMediaReader(Handler cameraBackgroundHandler)
 		{
 			throw new NotImplementedException();
 		}
@@ -32,9 +33,14 @@ namespace Media.Plugin.Custom.Android
 			throw new NotImplementedException();
 		}
 
-		internal override void TakeMedia()
+		protected override void SetupMediaReader()
 		{
 			throw new NotImplementedException();
+		}
+		
+		public override void Accept(IVisitor visitor)
+		{
+			base.Accept(visitor);
 		}
 	}
 }

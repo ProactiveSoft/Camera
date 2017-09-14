@@ -64,13 +64,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abstractions\Camera.cs" />
-    <Compile Include="Abstractions\IAndroidBaseVisitor.cs" />
+    <Compile Include="Abstractions\ICameraVisitor.cs" />
+    <Compile Include="Factories\ComputerParametersFactory.cs" />
     <Compile Include="Handlers\CameraCaptureSessionHandler.cs" />
     <Compile Include="Factories\CameraFactory.cs" />
+    <Compile Include="Helpers\EventArgs\CameraCaptureSessionStateEventArgs.cs" />
+    <Compile Include="Helpers\Parameters\CameraParameters.cs" />
     <Compile Include="PhotoCamera.cs" />
     <Compile Include="VideoCamera.cs" />
     <Compile Include="Abstractions\AndroidBaseVisitor.cs" />
-    <Compile Include="EventArgs\CameraDeviceStateEventArgs.cs" />
+    <Compile Include="Helpers\EventArgs\CameraDeviceStateEventArgs.cs" />
     <Compile Include="Handlers\CameraDeviceStateHandler.cs" />
     <Compile Include="Handlers\ImageAvailableHandler.cs" />
     <Compile Include="NoConfirmTakePhotoVisitor.cs" />

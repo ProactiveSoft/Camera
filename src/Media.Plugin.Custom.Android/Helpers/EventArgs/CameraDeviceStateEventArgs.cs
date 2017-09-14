@@ -1,6 +1,6 @@
 ﻿using Android.Hardware.Camera2;
 
-namespace Media.Plugin.Custom.Android.EventArgs
+namespace Media.Plugin.Custom.Android.Helpers.EventArgs
 {
 	internal class CameraDeviceStateEventArgs : System.EventArgs
 	{

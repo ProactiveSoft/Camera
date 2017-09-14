@@ -81,7 +81,8 @@ namespace Media.Plugin.Custom.Android
 					throw new ArgumentNullException(nameof(visitor),
 						$"Pass a suitable visitor to {nameof(NoConfirmTakePhotoVisitor)} for getting its private members.");
 				case ImageAvailableHandler imageAvailableHandler:
-					imageAvailableHandler.Visit(Camera.StoreOptions);
+					// Undone: Pass options to ImageAvailableHandler
+					//imageAvailableHandler.Visit(Camera.StoreOptions);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(visitor));

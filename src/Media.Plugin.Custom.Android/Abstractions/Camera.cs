@@ -17,9 +17,11 @@ using System.Threading.Tasks;
 using Android.Content;
 using Android.Hardware.Camera2;
 using Android.OS;
+using Android.Widget;
 using Java.Lang;
-using Media.Plugin.Custom.Android.EventArgs;
 using Media.Plugin.Custom.Android.Handlers;
+using Media.Plugin.Custom.Android.Helpers.EventArgs;
+using Media.Plugin.Custom.Android.Helpers.Parameters;
 using Plugin.CurrentActivity;
 using Plugin.Media;
 using Plugin.Media.Abstractions;
@@ -33,10 +35,10 @@ namespace Media.Plugin.Custom.Android.Abstractions
 	/// <summary>
 	/// Facade for Android's Camera2 Api.
 	/// </summary>
-	internal abstract class Camera
+	internal abstract class Camera : IVisitable
 	{
 		#region Fields & properties
-		
+
 		protected readonly IVisitable Visitable;
 
 		// Undone: Make fields private & expose operations
@@ -49,19 +51,21 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// The camera device
 		/// </summary>
 		protected CameraDevice CameraDevice;
+		protected CameraCaptureSession CameraCaptureSession;
 
 		//++ Camera handlers
 		/// <summary>
 		/// The camera device state handler
 		/// </summary>
 		protected readonly CameraDeviceStateHandler CameraDeviceStateHandler;
+		protected readonly CameraCaptureSessionHandler CameraCaptureSessionHandler;
 
 		//++ Camera properties
 		/// <summary>
 		/// The store options
 		/// </summary>
 		/// <value>The store options.</value>
-		internal StoreCameraMediaOptions StoreOptions { get; }
+		protected StoreCameraMediaOptions StoreOptions { get; }
 		/// <summary>
 		/// The camera identifier
 		/// </summary>
@@ -74,10 +78,14 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// The flash supported
 		/// </summary>
 		protected bool FlashSupported;
+		protected CameraParameters CameraParameters;
 
 
-		protected readonly MediaPickerActivity MediaPickerActivity = new MediaPickerActivity();		
-		
+		protected OperationType CameraOperationType;
+
+
+		protected readonly MediaPickerActivity MediaPickerActivity = new MediaPickerActivity();
+
 		#endregion
 
 
@@ -131,7 +139,8 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 			Manager = (CameraManager)CrossCurrentActivity.Current.Activity.GetSystemService(Context.CameraService);
 
-			CameraDeviceStateHandler = new CameraDeviceStateHandler(Visitable);
+			CameraDeviceStateHandler = new CameraDeviceStateHandler(this);
+			CameraCaptureSessionHandler = new CameraCaptureSessionHandler();
 		}
 
 		#region Camera properties 
@@ -141,7 +150,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// </summary>
 		/// <param name="defaultCamera">The default camera.</param>
 		/// <exception cref="ArgumentOutOfRangeException">defaultCamera</exception>
-		internal void FindCameraProperties(CameraChoice defaultCamera)
+		private void FindCameraProperties(CameraChoice defaultCamera)
 		{
 			switch (defaultCamera)
 			{
@@ -183,23 +192,11 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// </summary>
 		protected abstract void FindLargestResolution();
 
-		#endregion
-
-		#region Camera preparations
-
-		internal abstract void SetupMediaReader(Handler cameraBackgroundHandler);
-
-		#endregion
-
-		#region Camera operations
-
 		/// <summary>
-		/// Opens requested camera.
+		/// Opens requested camera and creates <see cref="Android.Hardware.Camera2.CameraCaptureSession"/>.
 		/// </summary>
-		/// <param name="cameraOpenLock">Lock for opening camera to handle contention.</param>
-		/// <param name="cameraBackgroundHandler"></param>
 		/// <returns>Task&lt;CameraDevice&gt;: CameraDevice.</returns>
-		internal async Task<CameraDevice> OpenCamera(SemaphoreSlim cameraOpenLock, Handler cameraBackgroundHandler)
+		private async Task<CameraDevice> OpenCamera()
 		{
 			var tcs = new TaskCompletionSource<CameraDevice>();
 
@@ -209,10 +206,10 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 			try
 			{
-				if (!await cameraOpenLock.WaitAsync(2500))
+				if (!await CameraOpenCloseLock.WaitAsync(2500))
 					tcs.SetException(new RuntimeException("Time out waiting to lock camera opening."));
 				else
-					Manager.OpenCamera(CameraId, CameraDeviceStateHandler, cameraBackgroundHandler);
+					Manager.OpenCamera(CameraId, CameraDeviceStateHandler, CameraBackgroundHandler);
 			}
 			catch (CameraAccessException e)
 			{
@@ -243,7 +240,123 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 		protected abstract void CreateCameraCaptureSession();
 
-		internal abstract void TakeMedia();
+		private Task<CameraCaptureSession> GetCameraCaptureSession()
+		{
+			var tcs = new TaskCompletionSource<CameraCaptureSession>();
+
+			CameraCaptureSessionHandler.Configured += CameraCaptureSession_State;
+
+			return tcs.Task;
+
+
+			void CameraCaptureSession_State(object sender, CameraCaptureSessionStateEventArgs args)
+			{
+				try
+				{
+					tcs.SetResult(args.CameraCaptureSession);
+				}
+				finally
+				{
+					CameraCaptureSessionHandler.Configured -= CameraCaptureSession_State;
+				}
+			}
+		}
+
+		#endregion
+
+		#region Camera preparations
+
+		protected abstract void SetupMediaReader();
+
+		#endregion
+
+		#region Camera operations
+
+		/// <summary>
+		/// Takes photo or video depending on <see cref="OperationType"/>.
+		/// </summary>
+		/// <param name="data">Data for setting up camera.</param>
+		/// <returns>Captured photo or video.</returns>
+		internal virtual async Task<MediaFile> TakeMedia((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
+		{
+			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) = data;
+
+			if (CameraCaptureSession == null)
+			{
+				(CameraDevice camera, CameraCaptureSession session) = await SetupCamera().ConfigureAwait(false);
+				CameraDevice = camera;
+				CameraCaptureSession = session;
+			}
+
+			return default;   // No need to return anything as it only prepares camera to be used by Child
+
+			// Camera setup using Template Method pattern
+			async Task<(CameraDevice camera, CameraCaptureSession session)> SetupCamera()
+			{
+				#region Early camera setup
+
+				if (!media.IsCameraAvailable) throw new NotSupportedException("OS doesn't support camera.");
+
+				if (!permission) return default;
+
+				verifyOptions(StoreOptions);
+
+				try
+				{
+					FindCameraProperties(StoreOptions.DefaultCamera);
+
+					FindLargestResolution();
+
+					SetupMediaReader();
+				}
+				catch (CameraAccessException e)
+				{
+					e.PrintStackTrace();
+				}
+				catch (NullPointerException e)
+				{
+					// Currently an NPE is thrown when the Camera2API is used but not supported on the
+					// device this code runs.
+					Toast.MakeText(CrossCurrentActivity.Current.Activity, "App cannot use Camera because camera's driver is old.",
+						ToastLength.Long);
+				}
+
+				#endregion
+
+				#region Camera setup
+
+				CameraDevice camera = await OpenCamera().ConfigureAwait(false);
+				CameraCaptureSession session = await GetCameraCaptureSession();
+
+				return (camera, session);
+				#endregion
+			}
+		}
+
+		#endregion
+
+		#region Visitables
+
+		/// <summary>
+		/// Sends private members to required classes.
+		/// </summary>
+		/// <param name="visitor">Class which wants private members.</param>
+		public virtual void Accept(IVisitor visitor)
+		{
+			switch (visitor)
+			{
+				case CameraDeviceStateHandler cameraDeviceStateHandler:
+					CameraParameters.CameraOpenCloseLock = CameraOpenCloseLock;
+					CameraParameters.CreateCameraCaptureSession = CreateCameraCaptureSession;
+
+					// Passes private members to CameraDeviceStateHandler
+					cameraDeviceStateHandler.Visit(CameraParameters);
+					break;
+				default:
+					visitor.Visit(this);
+					break;
+			}
+		}
 
 		#endregion
 	}

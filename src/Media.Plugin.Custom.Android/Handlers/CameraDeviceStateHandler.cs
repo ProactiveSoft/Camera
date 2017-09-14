@@ -2,23 +2,22 @@
 using System.Threading;
 using Android.Hardware.Camera2;
 using Media.Plugin.Custom.Android.Abstractions;
-using Media.Plugin.Custom.Android.EventArgs;
+using Media.Plugin.Custom.Android.Helpers.EventArgs;
+using Media.Plugin.Custom.Android.Helpers.Parameters;
 using Plugin.Media.Abstractions.Custom;
 using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 
 namespace Media.Plugin.Custom.Android.Handlers
 {
-	internal class CameraDeviceStateHandler : CameraDevice.StateCallback, IAndroidBaseVisitor
+	internal class CameraDeviceStateHandler : CameraDevice.StateCallback, ICameraVisitor
 	{
-		private readonly IVisitable _visitable;
-
 		private SemaphoreSlim _cameraOpenCloseLock;
+		private Action _createCameraCaptureSession;
+
 
 		public CameraDeviceStateHandler(IVisitable visitable)
 		{
-			_visitable = visitable;
-
-			((AndroidBaseVisitor)_visitable).Accept(this);   // Gets AndroidBaseVisitor's private members
+			visitable.Accept(this);   // Gets AndroidBaseVisitor's private members
 		}
 
 		#region Camera States
@@ -32,8 +31,7 @@ namespace Media.Plugin.Custom.Android.Handlers
 			_cameraDeviceStateEventArgs.Camera = camera;
 			OnOpened(this, _cameraDeviceStateEventArgs);
 
-			// Undone: Create CameraCaptureSession
-			// Start it from AndroidBaseVisitor or NoConfirmTakePhotoVisitor
+			_createCameraCaptureSession();   // Creates CameraCaptureSession
 		}
 
 		public override void OnError(CameraDevice camera, CameraError error)
@@ -74,10 +72,14 @@ namespace Media.Plugin.Custom.Android.Handlers
 
 		/// <inheritdoc />
 		/// <summary>
-		/// Gets <see cref="T:Media.Plugin.Custom.Android.CameraWithoutConfirmation.AndroidBaseVisitor" />'s private members.
+		/// Gets <see cref="Camera"/>'s private members.
 		/// </summary>
-		/// <param name="cameraOpenCloseLock">The camera open close lock.</param>
-		public void Visit(SemaphoreSlim cameraOpenCloseLock) => _cameraOpenCloseLock = cameraOpenCloseLock;
+		/// <param name="parameters"></param>
+		public void Visit(CameraParameters parameters)
+		{
+			_cameraOpenCloseLock = parameters.CameraOpenCloseLock;
+			_createCameraCaptureSession = parameters.CreateCameraCaptureSession;
+		}
 
 		public void Visit(IVisitable visitable)
 		{

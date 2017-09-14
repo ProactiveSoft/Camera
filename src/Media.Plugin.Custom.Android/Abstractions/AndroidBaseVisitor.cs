@@ -38,29 +38,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		public virtual Task<MediaFile> Visit((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
 		{
 			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) = data;
-
-			try
-			{
-				if (!media.IsCameraAvailable) throw new NotSupportedException("OS doesn't support Camera.");
-
-				if (!permission) return null;
-
-				verifyOptions(Options);
-
-				Camera.FindCameraProperties(Camera.StoreOptions.DefaultCamera);
-
-				// Undone: Define Facade for calling OpenCamera()  
-				//CameraDevice = await Camera.OpenCamera(CameraOpenCloseLock, CameraBackgroundHandler);
-			}
-			catch (CameraAccessException cameraAccessException)
-			{
-				cameraAccessException.PrintStackTrace();
-			}
-			catch (NullPointerException nullPointerException)
-			{
-				Toast.MakeText(CrossCurrentActivity.Current.Activity, "App cannot use Camera because camera driver is old.",
-					ToastLength.Long);
-			}
+			
 
 			// No need to return anything as it only prepares camera to be used by Child
 			return Task.FromResult<MediaFile>(null);

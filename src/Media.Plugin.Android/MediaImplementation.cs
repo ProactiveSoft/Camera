@@ -803,7 +803,7 @@ namespace Plugin.Media
 		}
 
 		#region Visitable
-		
+
 		public void Accept(IVisitor visitor) => visitor.Visit(this);
 
 		public T Accept<T>(IVisitor<T> visitor)
@@ -812,8 +812,8 @@ namespace Plugin.Media
 				(Task.Run(async () => await RequestCameraPermissions()).Result, VerifyOptions, this);
 
 			return ((ICameraVisitor<T>)visitor).Visit(data);
-		}		
-		
+		}
+
 		#endregion
 	}
 }

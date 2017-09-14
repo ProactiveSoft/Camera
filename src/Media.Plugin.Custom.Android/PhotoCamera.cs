@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Android.Graphics;
@@ -6,7 +8,10 @@ using Android.Hardware.Camera2;
 using Android.Hardware.Camera2.Params;
 using Android.Media;
 using Android.OS;
+using Android.Views;
+using Media.Plugin.Custom.Android.Factories;
 using Media.Plugin.Custom.Android.Handlers;
+using Media.Plugin.Custom.Android.Helpers.Parameters;
 using DroidSize = Android.Util.Size;
 using Plugin.Media.Abstractions;
 using Plugin.Media.Abstractions.Custom;
@@ -21,13 +26,19 @@ namespace Media.Plugin.Custom.Android
 	internal class PhotoCamera : Camera
 	{
 		//+ Camera properties
-		internal Size LargestImageResolution { private set; get; }
+		private Size _largestImageResolution; 
 
 		private ImageReader _imageReader;
 		private readonly ImageReader.IOnImageAvailableListener _imageAvailableHandler;
 
-		internal PhotoCamera(StoreMediaOptions storeOptions, IVisitable visitable) : base(storeOptions, visitable) =>
+		internal PhotoCamera(StoreMediaOptions storeOptions, IVisitable visitable) : base(storeOptions, visitable)
+		{
+			CameraOperationType = OperationType.Photo;
+
 			_imageAvailableHandler = new ImageAvailableHandler(visitable);
+
+			CameraParameters = ComputerParametersFactory.CreateCameraParameters(CameraOperationType);
+		}
 
 		protected override void FindLargestResolution()
 		{
@@ -39,45 +50,75 @@ namespace Media.Plugin.Custom.Android
 				.OrderByDescending(droidSize => (long)droidSize.Height * droidSize.Width)
 				.FirstOrDefault();
 
-			LargestImageResolution = new Size(largestSizeAndroid.Width, largestSizeAndroid.Height);
+			_largestImageResolution = new Size(largestSizeAndroid.Width, largestSizeAndroid.Height);
 		}
 
-		//Undone: Call it from Service.Start()
-		internal override void SetupMediaReader(Handler cameraBackgroundHandler)
+		protected override void SetupMediaReader()
 		{
-			_imageReader = ImageReader.NewInstance(LargestImageResolution.Width, LargestImageResolution.Height,
+			_imageReader = ImageReader.NewInstance(_largestImageResolution.Width, _largestImageResolution.Height,
 				ImageFormatType.Jpeg, 1);
-			_imageReader.SetOnImageAvailableListener(_imageAvailableHandler, cameraBackgroundHandler);
+			_imageReader.SetOnImageAvailableListener(_imageAvailableHandler, CameraBackgroundHandler);
+		}
+
+		protected override void CreateCameraCaptureSession()
+		{
+			try
+			{
+				var surfaces = new List<Surface>
+				{
+					_imageReader.Surface
+				};
+
+				CameraDevice.CreateCaptureSession(surfaces, CameraCaptureSessionHandler, null);
+			}
+			catch (CameraAccessException e)
+			{
+				e.PrintStackTrace();
+			}
 		}
 
 		#region Camera operations
 
-		protected override void CreateCameraCaptureSession()
-		{
-			throw new System.NotImplementedException();
-		}
-
-		internal override void TakeMedia() => LockFocus();
-
 		private void LockFocus()
 		{
-			
+
 		}
 
 		private void RunPreCaptureSequence()
 		{
-			
+
 		}
 
 		private void CaptureStillPhoto()
 		{
-			
+
 		}
 
 		private void UnlockFocus()
 		{
-			
+
 		}
+
+		#endregion
+
+		#region Visitables
+
+		///// <inheritdoc />
+		///// <summary>
+		///// Sends private members to required classes.
+		///// </summary>
+		///// <param name="visitor">Class which wants private members.</param>
+		//public override void Accept(IVisitor visitor)
+		//{
+		//	switch (visitor)
+		//	{
+		//		default:
+		//			visitor.Visit(this);
+		//			break;
+		//	}
+
+		//	base.Accept(visitor);   // Gets private members of Camera
+		//}
 
 		#endregion
 	}
