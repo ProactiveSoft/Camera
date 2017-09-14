@@ -35,7 +35,7 @@ namespace Media.Plugin.Custom.Android
 		{
 			CameraOperationType = OperationType.Photo;
 
-			_imageAvailableHandler = new ImageAvailableHandler(visitable);
+			_imageAvailableHandler = new ImageAvailableHandler(StoreOptions, CameraBackgroundHandler, MediaPickerActivity);
 
 			CameraParameters = ComputerParametersFactory.CreateCameraParameters(CameraOperationType);
 		}

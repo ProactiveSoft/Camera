@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Android.App;
 using Android.Media;
 using Android.OS;
 using Java.IO;
 using Java.Lang;
 using Java.Nio;
-using Media.Plugin.Custom.Android.Abstractions;
 using Plugin.CurrentActivity;
 using Plugin.Media;
 using Plugin.Media.Abstractions;
@@ -18,15 +15,14 @@ using File = System.IO.File;
 
 namespace Media.Plugin.Custom.Android.Handlers
 {
-	internal class ImageAvailableHandler : JavaObject, ImageReader.IOnImageAvailableListener, ICameraOptionsVisitor,
+	internal class ImageAvailableHandler : JavaObject, ImageReader.IOnImageAvailableListener,
 		IPickerActivityVisitor
 	{
-		private StoreCameraMediaOptions _storeOptions;
+		#region Camera's members
 
-		#region AndroidBaseVisitor's members
-
-		private MediaPickerActivity _mediaPickerActivity;
-		private Handler _cameraBackgroundHandler;
+		private readonly StoreCameraMediaOptions _storeOptions;
+		private readonly MediaPickerActivity _mediaPickerActivity;
+		private readonly Handler _cameraBackgroundHandler;
 
 		#endregion
 
@@ -39,10 +35,11 @@ namespace Media.Plugin.Custom.Android.Handlers
 
 		#endregion
 
-		public ImageAvailableHandler(IVisitable visitable)
+		internal ImageAvailableHandler(StoreMediaOptions storeOptions, Handler cameraBackgroundHandler, MediaPickerActivity mediaPickerActivity)
 		{
-			visitable.Accept(this); // Gets camera options from NoConfirmTakePhotoVisitor
-			((AndroidBaseVisitor)visitable).Accept(this); // Gets private members of AndroidBaseVisitor
+			_storeOptions = (StoreCameraMediaOptions)storeOptions;
+			_cameraBackgroundHandler = cameraBackgroundHandler;
+			_mediaPickerActivity = mediaPickerActivity;
 		}
 
 		public void OnImageAvailable(ImageReader reader) =>
@@ -53,18 +50,6 @@ namespace Media.Plugin.Custom.Android.Handlers
 		public void Visit(IVisitable visitable)
 		{
 
-		}
-
-		/// <summary>
-		/// Gets private members of <see cref="AndroidBaseVisitor" />.
-		/// </summary>
-		/// <param name="cameraBackgroundHandler">The camera background handler.</param>
-		/// <param name="mediaPickerActivity">Activity to handle media picking.</param>
-		/// <inheritdoc />
-		public void Visit(Handler cameraBackgroundHandler, Activity mediaPickerActivity)
-		{
-			_cameraBackgroundHandler = cameraBackgroundHandler;
-			_mediaPickerActivity = (MediaPickerActivity)mediaPickerActivity;
 		}
 
 		/// <inheritdoc />
@@ -85,13 +70,6 @@ namespace Media.Plugin.Custom.Android.Handlers
 			_convertUriToPath = convertUriToPath;
 			_onMediaPicked = onMediaPicked;
 		}
-
-		/// <summary>
-		/// Gets private <see cref="T:Plugin.Media.Abstractions.StoreCameraMediaOptions" /> of classes.
-		/// </summary>
-		/// <param name="options">Camera options.</param>
-		/// <inheritdoc />
-		public void Visit(StoreMediaOptions options) => _storeOptions = options as StoreCameraMediaOptions;
 
 		#endregion
 

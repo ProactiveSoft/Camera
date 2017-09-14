@@ -1,6 +1,4 @@
 ﻿using System;
-using Android.App;
-using Android.OS;
 using Plugin.Media.Abstractions.Custom;
 using DroidUri = Android.Net.Uri;
 
@@ -8,13 +6,6 @@ namespace Plugin.Media.Abstractions
 {
 	internal interface IPickerActivityVisitor : IVisitor
 	{
-		/// <summary>
-		/// Gets private members of <see cref="Media.Plugin.Custom.Android.CameraWithoutConfirmation.AndroidBaseVisitor"/>.
-		/// </summary>
-		/// <param name="cameraBackgroundHandler">The camera background handler.</param>
-		/// <param name="mediaPickerActivity">Activity to handle media picking.</param>
-		void Visit(Handler cameraBackgroundHandler, Activity mediaPickerActivity);
-
 		/// <summary>
 		/// Gets <see cref="MediaPickerActivity"/> private members.
 		/// </summary>

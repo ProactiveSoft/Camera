@@ -7,19 +7,6 @@ namespace Plugin.Media.Abstractions.Custom
 		void Visit(IVisitable visitable);
 	}
 
-	/// <summary>
-	/// Visitor for passing camera options.
-	/// </summary>
-	/// <seealso cref="IVisitor" />
-	public interface ICameraOptionsVisitor : IVisitor
-	{
-		/// <summary>
-		/// Passes options to classes.
-		/// </summary>
-		/// <param name="options">Camera options.</param>
-		void Visit(StoreMediaOptions options);
-	}
-
 	public interface IVisitor<T> : IVisitor
 	{
 		T Visit(IVisitableReturns visitable);

@@ -597,8 +597,18 @@ namespace Plugin.Media
 		/// Passes MediaPickerActivity's private members to classes.
 		/// </summary>
 		/// <param name="visitor">The visitor.</param>
-		public void Accept(IVisitor visitor) =>
-			((IPickerActivityVisitor) visitor).Visit(ref path, Touch, GetLocalPath, OnMediaPicked);
+		public void Accept(IVisitor visitor)
+		{
+			switch (visitor)
+			{
+				case IPickerActivityVisitor pickerActivityVisitor:
+					pickerActivityVisitor.Visit(ref path, Touch, GetLocalPath, OnMediaPicked);
+					break;
+				default:
+					visitor.Visit(this);
+					break;
+			}
+		}
 
 		public T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
 
