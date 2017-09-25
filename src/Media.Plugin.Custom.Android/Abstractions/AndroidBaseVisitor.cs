@@ -1,17 +1,9 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Android.Hardware.Camera2;
-using Android.OS;
-using Android.Widget;
-using Java.Lang;
 using Media.Plugin.Custom.Android.Factories;
 using Media.Plugin.Custom.Android.Handlers;
-using Plugin.CurrentActivity;
-using Plugin.Media;
 using Plugin.Media.Abstractions;
 using Plugin.Media.Abstractions.Custom;
-using CameraDevice = Android.Hardware.Camera2.CameraDevice;
 
 namespace Media.Plugin.Custom.Android.Abstractions
 {

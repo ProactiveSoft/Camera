@@ -11,17 +11,24 @@
 // </copyright>
 // <summary></summary>
 // ***********************************************************************
+
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Android.App;
 using Android.Content;
 using Android.Hardware.Camera2;
 using Android.OS;
+using Android.Runtime;
+using Android.Views;
 using Android.Widget;
 using Java.Lang;
+using Media.Plugin.Custom.Android.Factories;
 using Media.Plugin.Custom.Android.Handlers;
 using Media.Plugin.Custom.Android.Helpers.EventArgs;
 using Media.Plugin.Custom.Android.Helpers.Parameters;
+using Media.Plugin.Custom.Android.States.Capture;
 using Plugin.CurrentActivity;
 using Plugin.Media;
 using Plugin.Media.Abstractions;
@@ -32,10 +39,11 @@ using CameraChoice = Plugin.Media.Abstractions.CameraDevice;
 
 namespace Media.Plugin.Custom.Android.Abstractions
 {
+	/// <inheritdoc cref="IVisitorRef" />
 	/// <summary>
 	/// Facade for Android's Camera2 Api.
 	/// </summary>
-	internal abstract class Camera : IVisitable
+	internal abstract class Camera : IVisitable, IVisitorRef
 	{
 		#region Fields & properties
 
@@ -47,11 +55,15 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// The Camera's manager
 		/// </summary>
 		protected readonly CameraManager Manager;
+
 		/// <summary>
 		/// The camera device
 		/// </summary>
 		protected CameraDevice CameraDevice;
+
 		protected CameraCaptureSession CameraCaptureSession;
+		protected CaptureRequest.Builder CaptureRequestBuilder;
+		protected CaptureRequest CaptureRequest;
 
 		//++ Camera handlers
 		/// <summary>
@@ -59,6 +71,8 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// </summary>
 		protected readonly CameraDeviceStateHandler CameraDeviceStateHandler;
 		protected readonly CameraCaptureSessionHandler CameraCaptureSessionHandler;
+		protected readonly CameraCaptureSessionCaptureHandler<ICaptureState> CameraCaptureSessionCaptureHandler;
+		protected readonly CameraCaptureSessionPhotoCaptureHandler CameraCaptureSessionPhotoCaptureHandler;
 
 		//++ Camera properties
 		/// <summary>
@@ -78,6 +92,14 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// The flash supported
 		/// </summary>
 		protected bool FlashSupported;
+		private readonly Dictionary<int, int> _orientations = new Dictionary<int, int>(4)
+		{
+			[(int)SurfaceOrientation.Rotation0] = 90,
+			[(int)SurfaceOrientation.Rotation90] = 0,
+			[(int)SurfaceOrientation.Rotation180] = 270,
+			[(int)SurfaceOrientation.Rotation270] = 180
+		};
+		protected int SensorOrientation;
 		protected CameraParameters CameraParameters;
 
 
@@ -141,6 +163,8 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 			CameraDeviceStateHandler = new CameraDeviceStateHandler(this);
 			CameraCaptureSessionHandler = new CameraCaptureSessionHandler();
+			CameraCaptureSessionCaptureHandler = new CameraCaptureSessionCaptureHandler<ICaptureState>();
+			CameraCaptureSessionPhotoCaptureHandler = new CameraCaptureSessionPhotoCaptureHandler(this, UnlockFocus);
 		}
 
 		#region Camera properties 
@@ -178,6 +202,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 					{
 						CameraCharacteristics = cameraCharacteristics;
 						CameraId = camId;
+						SensorOrientation = (int)CameraCharacteristics.Get(CameraCharacteristics.SensorOrientation);
 
 						// Check if flash is supported
 						Boolean flashAvailable = (Boolean)CameraCharacteristics.Get(CameraCharacteristics.FlashInfoAvailable);
@@ -193,7 +218,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		protected abstract void FindLargestResolution();
 
 		/// <summary>
-		/// Opens requested camera and creates <see cref="Android.Hardware.Camera2.CameraCaptureSession"/>.
+		/// Opens requested camera and creates <see cref="CameraCaptureSession"/>.
 		/// </summary>
 		/// <returns>Task&lt;CameraDevice&gt;: CameraDevice.</returns>
 		private async Task<CameraDevice> OpenCamera()
@@ -268,6 +293,48 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 		protected abstract void SetupMediaReader();
 
+		protected void UnlockFocus()
+		{
+			try
+			{
+				CaptureRequestBuilder.Set(CaptureRequest.ControlAfTrigger, (int)ControlAFTrigger.Cancel);
+				SetAutoFlash(CaptureRequestBuilder);
+				CameraCaptureSession.Capture(CaptureRequestBuilder.Build(), CameraCaptureSessionCaptureHandler,
+					CameraBackgroundHandler);
+
+				// Accepts current CaptureState & sets it to WaitingLock
+				//-- Similar to:
+				//-- ref ICaptureState captureState = ref CameraCaptureSessionCaptureHandler.Accept(this);
+				//-- captureState = CaptureStateFactory.GetCaptureState(CaptureStates.WaitingLock);
+				CameraCaptureSessionCaptureHandler.Accept(this) = CaptureStateFactory.GetCaptureState(CaptureStates.WaitingLock);
+			}
+			catch (CameraAccessException e)
+			{
+				e.PrintStackTrace();
+			}
+		}
+
+		/// <summary>
+		/// Closes the camera.
+		/// </summary>
+		/// <returns>Completed Task.</returns>
+		protected virtual Task CloseCamera()
+		{
+			if (CameraCaptureSession != null)
+			{
+				CameraCaptureSession.Close();
+				CameraCaptureSession = null;
+			}
+
+			if (CameraDevice != null)
+			{
+				CameraDevice.Close();
+				CameraDevice = null;
+			}
+
+			return Task.CompletedTask;
+		}
+
 		#endregion
 
 		#region Camera operations
@@ -277,7 +344,8 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// </summary>
 		/// <param name="data">Data for setting up camera.</param>
 		/// <returns>Captured photo or video.</returns>
-		internal virtual async Task<MediaFile> TakeMedia((bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
+		internal virtual async Task<MediaFile> TakeMedia(
+			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
 		{
 			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) = data;
 
@@ -288,7 +356,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 				CameraCaptureSession = session;
 			}
 
-			return default;   // No need to return anything as it only prepares camera to be used by Child
+			return default; // No need to return anything as it only prepares camera to be used by Child
 
 			// Camera setup using Template Method pattern
 			async Task<(CameraDevice camera, CameraCaptureSession session)> SetupCamera()
@@ -313,7 +381,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 				{
 					e.PrintStackTrace();
 				}
-				catch (NullPointerException e)
+				catch (NullPointerException)
 				{
 					// Currently an NPE is thrown when the Camera2API is used but not supported on the
 					// device this code runs.
@@ -329,8 +397,33 @@ namespace Media.Plugin.Custom.Android.Abstractions
 				CameraCaptureSession session = await GetCameraCaptureSession();
 
 				return (camera, session);
+
 				#endregion
 			}
+		}
+
+		protected void SetAutoFlash(CaptureRequest.Builder captureRequestBuilder)
+		{
+			if (FlashSupported)
+				captureRequestBuilder.Set(CaptureRequest.ControlAeMode, (int)ControlAEMode.OnAutoFlash);
+		}
+
+		#endregion
+
+		#region Helpers
+
+		/// <summary>
+		/// Retrieves the JPEG orientation from default screen rotation.
+		/// </summary>
+		/// <returns>Jpeg orientation.</returns>
+		protected int GetOrientation()
+		{
+			// Sensor orientation is 90 for most devices, or 270 for some devices (eg. Nexus 5X)
+			// We have to take that into account and rotate JPEG properly.
+			// For devices with orientation of 90, we simply return our mapping from _orientations.
+			// For devices with orientation of 270, we need to rotate the JPEG 180 degrees.
+			int displayRotation = (int)CrossCurrentActivity.Current.Activity.WindowManager.DefaultDisplay.Rotation;
+			return (_orientations[displayRotation] + SensorOrientation + 270) % 360;
 		}
 
 		#endregion
@@ -357,6 +450,25 @@ namespace Media.Plugin.Custom.Android.Abstractions
 					break;
 			}
 		}
+
+		#endregion
+
+		#region Visitors
+
+		public void Visit(IVisitable visitable)
+		{
+		}
+
+		/// <inheritdoc />
+		/// <summary>
+		/// Collect <see cref="T:Plugin.Media.Abstractions.Custom.IVisitableRef`1" />'s private data by reference.
+		/// </summary>
+		/// <typeparam name="TRequiredData">The type of the required data.</typeparam>
+		/// <param name="requiredData">The required data.</param>
+		/// <returns>
+		/// Required data.
+		/// </returns>
+		public ref TRequiredData Visit<TRequiredData>(ref TRequiredData requiredData) => ref requiredData;
 
 		#endregion
 	}

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Android.Hardware.Camera2;
-using Android.OS;
 using Media.Plugin.Custom.Android.Abstractions;
 using Media.Plugin.Custom.Android.Factories;
-using Media.Plugin.Custom.Android.Helpers.Parameters;
 using Plugin.Media.Abstractions;
 using Plugin.Media.Abstractions.Custom;
 
