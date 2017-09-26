@@ -16,11 +16,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Android.App;
 using Android.Content;
 using Android.Hardware.Camera2;
 using Android.OS;
-using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Java.Lang;
@@ -63,14 +61,13 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 		protected CameraCaptureSession CameraCaptureSession;
 		protected CaptureRequest.Builder CaptureRequestBuilder;
-		protected CaptureRequest CaptureRequest;
 
 		//++ Camera handlers
 		/// <summary>
 		/// The camera device state handler
 		/// </summary>
 		protected readonly CameraDeviceStateHandler CameraDeviceStateHandler;
-		protected readonly CameraCaptureSessionHandler CameraCaptureSessionHandler;
+		protected readonly CameraCaptureSessionStateHandler CameraCaptureSessionStateHandler;
 		protected readonly CameraCaptureSessionCaptureHandler<ICaptureState> CameraCaptureSessionCaptureHandler;
 		protected readonly CameraCaptureSessionPhotoCaptureHandler CameraCaptureSessionPhotoCaptureHandler;
 
@@ -162,7 +159,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 			Manager = (CameraManager)CrossCurrentActivity.Current.Activity.GetSystemService(Context.CameraService);
 
 			CameraDeviceStateHandler = new CameraDeviceStateHandler(this);
-			CameraCaptureSessionHandler = new CameraCaptureSessionHandler();
+			CameraCaptureSessionStateHandler = new CameraCaptureSessionStateHandler(this);
 			CameraCaptureSessionCaptureHandler = new CameraCaptureSessionCaptureHandler<ICaptureState>();
 			CameraCaptureSessionPhotoCaptureHandler = new CameraCaptureSessionPhotoCaptureHandler(this, UnlockFocus);
 		}
@@ -269,7 +266,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		{
 			var tcs = new TaskCompletionSource<CameraCaptureSession>();
 
-			CameraCaptureSessionHandler.Configured += CameraCaptureSession_State;
+			CameraCaptureSessionStateHandler.Configured += CameraCaptureSession_State;
 
 			return tcs.Task;
 
@@ -282,7 +279,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 				}
 				finally
 				{
-					CameraCaptureSessionHandler.Configured -= CameraCaptureSession_State;
+					CameraCaptureSessionStateHandler.Configured -= CameraCaptureSession_State;
 				}
 			}
 		}
@@ -438,12 +435,14 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		{
 			switch (visitor)
 			{
-				case CameraDeviceStateHandler cameraDeviceStateHandler:
+				case ICameraVisitor cameraVisitor:
+
+					CameraParameters.CameraDevice = CameraDevice;
 					CameraParameters.CameraOpenCloseLock = CameraOpenCloseLock;
 					CameraParameters.CreateCameraCaptureSession = CreateCameraCaptureSession;
 
-					// Passes private members to CameraDeviceStateHandler
-					cameraDeviceStateHandler.Visit(CameraParameters);
+					cameraVisitor.Visit(CameraParameters);
+
 					break;
 				default:
 					visitor.Visit(this);

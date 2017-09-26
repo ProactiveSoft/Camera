@@ -67,12 +67,15 @@ namespace Media.Plugin.Custom.Android
 		{
 			try
 			{
+				CaptureRequestBuilder = CameraDevice.CreateCaptureRequest(CameraTemplate.StillCapture);
+				CaptureRequestBuilder.AddTarget(_imageReader.Surface);
+
 				var surfaces = new List<Surface>
 				{
 					_imageReader.Surface
 				};
 
-				CameraDevice.CreateCaptureSession(surfaces, CameraCaptureSessionHandler, null);
+				CameraDevice.CreateCaptureSession(surfaces, CameraCaptureSessionStateHandler, null);
 			}
 			catch (CameraAccessException e)
 			{
@@ -86,10 +89,10 @@ namespace Media.Plugin.Custom.Android
 		{
 			try
 			{
+				// This is how to tell the camera to lock focus.
 				CaptureRequestBuilder.Set(CaptureRequest.ControlAfTrigger, (int)ControlAFTrigger.Start);
 				// Tell CameraCaptureSessionCaptureHandler to wait for the lock
-				ref ICaptureState captureState = ref CameraCaptureSessionCaptureHandler.Accept(this);
-				captureState = CaptureStateFactory.GetCaptureState(CaptureStates.WaitingLock);
+				CameraCaptureSessionCaptureHandler.Accept(this) = CaptureStateFactory.GetCaptureState(CaptureStates.WaitingLock);
 				CameraCaptureSession.Capture(CaptureRequestBuilder.Build(), CameraCaptureSessionCaptureHandler,
 					CameraBackgroundHandler);
 			}
@@ -103,10 +106,10 @@ namespace Media.Plugin.Custom.Android
 		{
 			try
 			{
+				// This is how to tell the camera to trigger.
 				CaptureRequestBuilder.Set(CaptureRequest.ControlAePrecaptureTrigger, (int)ControlAEPrecaptureTrigger.Start);
 				// Tell CameraCaptureSessionCaptureHandler to wait for precapture sequence to be set
-				ref ICaptureState captureState = ref CameraCaptureSessionCaptureHandler.Accept(this);
-				captureState = CaptureStateFactory.GetCaptureState(CaptureStates.WaitingPrecapture);
+				CameraCaptureSessionCaptureHandler.Accept(this) = CaptureStateFactory.GetCaptureState(CaptureStates.WaitingPrecapture);
 				CameraCaptureSession.Capture(CaptureRequestBuilder.Build(), CameraCaptureSessionCaptureHandler,
 					CameraBackgroundHandler);
 			}

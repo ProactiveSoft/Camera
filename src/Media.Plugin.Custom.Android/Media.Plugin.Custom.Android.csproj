@@ -67,7 +67,7 @@
     <Compile Include="Abstractions\ICameraVisitor.cs" />
     <Compile Include="Factories\ComputerParametersFactory.cs" />
     <Compile Include="Handlers\CameraCaptureSessionCaptureHandler.cs" />
-    <Compile Include="Handlers\CameraCaptureSessionHandler.cs" />
+    <Compile Include="Handlers\CameraCaptureSessionStateHandler.cs" />
     <Compile Include="Factories\CameraFactory.cs" />
     <Compile Include="Handlers\CameraCaptureSessionPhotoCaptureHandler.cs" />
     <Compile Include="Helpers\EventArgs\CameraCaptureSessionStateEventArgs.cs" />
