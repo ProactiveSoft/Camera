@@ -602,7 +602,7 @@ namespace Plugin.Media
 			switch (visitor)
 			{
 				case IPickerActivityVisitor pickerActivityVisitor:
-					pickerActivityVisitor.Visit(ref path, Touch, GetLocalPath, OnMediaPicked);
+					pickerActivityVisitor.Visit(out path, Touch, GetLocalPath, OnMediaPicked);
 					break;
 				default:
 					visitor.Visit(this);

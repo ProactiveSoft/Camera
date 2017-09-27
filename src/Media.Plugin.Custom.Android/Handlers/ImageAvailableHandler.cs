@@ -60,7 +60,7 @@ namespace Media.Plugin.Custom.Android.Handlers
 		/// <param name="createMediaFile">Method to create media file.</param>
 		/// <param name="convertUriToPath"></param>
 		/// <param name="onMediaPicked">Method to raise Media picked event.</param>
-		public void Visit(ref DroidUri newMediaFileUri, Action createMediaFile, Func<DroidUri, string> convertUriToPath,
+		public void Visit(out DroidUri newMediaFileUri, Action createMediaFile, Func<DroidUri, string> convertUriToPath,
 			Action<MediaPickedEventArgs> onMediaPicked)
 		{
 			newMediaFileUri = MediaPickerActivity.GetOutputMediaFile(CrossCurrentActivity.Current.Activity,

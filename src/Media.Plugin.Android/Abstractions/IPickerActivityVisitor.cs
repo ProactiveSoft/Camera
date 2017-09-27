@@ -13,7 +13,7 @@ namespace Plugin.Media.Abstractions
 		/// <param name="createMediaFile">The create media file.</param>
 		/// <param name="convertUriToPath">The convert URI to path.</param>
 		/// <param name="onMediaPicked">Method to raise Media picked event.</param>
-		void Visit(ref DroidUri newMediaFileUri, Action createMediaFile, Func<DroidUri, string> convertUriToPath,
+		void Visit(out DroidUri newMediaFileUri, Action createMediaFile, Func<DroidUri, string> convertUriToPath,
 			Action<MediaPickedEventArgs> onMediaPicked);
 	}
 }
