@@ -45,7 +45,6 @@ namespace Media.Plugin.Custom.Android.Abstractions
 	{
 		#region Fields & properties
 
-		// Undone: Make fields private & expose operations
 		//++ Camera2's camera 
 		/// <summary>
 		/// The Camera's manager

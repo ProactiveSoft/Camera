@@ -45,7 +45,6 @@ namespace Media.Plugin.Custom.Android.Handlers
 			OnError(this, _cameraDeviceStateEventArgs);
 
 			// Undone: Stop Activity/Service
-			// Start it from AndroidVisitor1 or NoConfirmTakePhotoVisitor
 		}
 
 		public override void OnDisconnected(CameraDevice camera)

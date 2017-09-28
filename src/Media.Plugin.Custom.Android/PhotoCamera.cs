@@ -87,7 +87,6 @@ namespace Media.Plugin.Custom.Android
 		}
 
 		// Undone: Call from Dispose()
-
 		/// <inheritdoc />
 		protected override async Task CloseCamera()
 		{
