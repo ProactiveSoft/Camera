@@ -17,7 +17,7 @@ namespace Media.Plugin.Custom.Android.Handlers
 
 		public CameraDeviceStateHandler(IVisitable visitable)
 		{
-			visitable.Accept(this);   // Gets AndroidVisitor1's private members
+			visitable.Accept(this);   // Gets AndroidVisitor's private members
 		}
 
 		#region Camera States

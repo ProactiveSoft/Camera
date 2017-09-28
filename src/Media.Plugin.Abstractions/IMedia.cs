@@ -4,6 +4,7 @@ using Plugin.Media.Abstractions.Custom;
 
 namespace Plugin.Media.Abstractions
 {
+	/// <inheritdoc />
 	/// <summary>
 	/// Interface for Media
 	/// </summary>

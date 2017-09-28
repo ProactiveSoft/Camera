@@ -24,7 +24,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 	internal interface ICameraVisitor : IVisitor
 	{
 		/// <summary>
-		/// Gets <see cref="AndroidVisitor1"/>'s private members.
+		/// Gets <see cref="AndroidVisitor"/>'s private members.
 		/// </summary>
 		/// <param name="parameters">Camera parameters.</param>
 		void Visit(CameraParameters parameters);
