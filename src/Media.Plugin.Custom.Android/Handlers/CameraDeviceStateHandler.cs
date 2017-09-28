@@ -17,7 +17,7 @@ namespace Media.Plugin.Custom.Android.Handlers
 
 		public CameraDeviceStateHandler(IVisitable visitable)
 		{
-			visitable.Accept(this);   // Gets AndroidBaseVisitor's private members
+			visitable.Accept(this);   // Gets AndroidVisitor1's private members
 		}
 
 		#region Camera States
@@ -45,7 +45,7 @@ namespace Media.Plugin.Custom.Android.Handlers
 			OnError(this, _cameraDeviceStateEventArgs);
 
 			// Undone: Stop Activity/Service
-			// Start it from AndroidBaseVisitor or NoConfirmTakePhotoVisitor
+			// Start it from AndroidVisitor1 or NoConfirmTakePhotoVisitor
 		}
 
 		public override void OnDisconnected(CameraDevice camera)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Media.Plugin.Custom.Android.Abstractions;
 using Media.Plugin.Custom.Android.Factories;
 using Plugin.Media.Abstractions;
@@ -12,12 +13,14 @@ namespace Media.Plugin.Custom.Android
 	/// </summary>
 	internal class VideoCamera : Camera
 	{
-		internal VideoCamera(StoreMediaOptions storeOptions, IVisitable visitable) : base(storeOptions, visitable)
+		internal VideoCamera(StoreMediaOptions storeOptions) : base(storeOptions)
 		{
 			CameraOperationType = OperationType.Video;
 
 			CameraParameters = ComputerParametersFactory.CreateCameraParameters(CameraOperationType);
 		}
+
+		#region Camera preparations
 
 		protected override void FindLargestResolution()
 		{
@@ -33,10 +36,17 @@ namespace Media.Plugin.Custom.Android
 		{
 			throw new NotImplementedException();
 		}
-		
-		public override void Accept(IVisitor visitor)
+
+		#endregion
+
+		#region Camera operations
+
+		/// <inheritdoc />
+		protected override Task<MediaFile> GetSavedMediaFile()
 		{
-			base.Accept(visitor);
+			throw new NotImplementedException();
 		}
+
+		#endregion
 	}
 }

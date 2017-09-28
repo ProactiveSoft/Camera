@@ -10,18 +10,18 @@ namespace Media.Plugin.Custom.Android.Factories
 	{
 		private static readonly Dictionary<OperationType, Camera> Cameras = new Dictionary<OperationType, Camera>(2);
 
-		internal static Camera CreateCamera(OperationType operationType, StoreMediaOptions storeOptions, IVisitable visitable)
+		internal static Camera CreateCamera(OperationType operationType, StoreMediaOptions storeOptions)
 		{
 			if (Cameras.TryGetValue(operationType, out Camera camera)) return camera;
 
 			switch (operationType)
 			{
 				case OperationType.Photo:
-					camera = new PhotoCamera(storeOptions, visitable);
+					camera = new PhotoCamera(storeOptions);
 					Cameras[OperationType.Photo] = camera;
 					break;
 				case OperationType.Video:
-					camera = new VideoCamera(storeOptions, visitable);
+					camera = new VideoCamera(storeOptions);
 					Cameras[OperationType.Video] = camera;
 					break;
 				default:

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,10 +9,10 @@ using Android.Hardware.Camera2.Params;
 using Android.Media;
 using Android.Views;
 using Java.Lang;
-using Media.Plugin.Custom.Android.Abstractions;
 using Media.Plugin.Custom.Android.Factories;
 using Media.Plugin.Custom.Android.Handlers;
 using Media.Plugin.Custom.Android.States.Capture;
+using Plugin.Media;
 using DroidSize = Android.Util.Size;
 using Plugin.Media.Abstractions;
 using Plugin.Media.Abstractions.Custom;
@@ -31,7 +32,7 @@ namespace Media.Plugin.Custom.Android
 		private ImageReader _imageReader;
 		private readonly ImageReader.IOnImageAvailableListener _imageAvailableHandler;
 
-		internal PhotoCamera(StoreMediaOptions storeOptions, IVisitable visitable) : base(storeOptions, visitable)
+		internal PhotoCamera(StoreMediaOptions storeOptions) : base(storeOptions)
 		{
 			CameraOperationType = OperationType.Photo;
 
@@ -42,6 +43,8 @@ namespace Media.Plugin.Custom.Android
 
 			CameraParameters = ComputerParametersFactory.CreateCameraParameters(CameraOperationType);
 		}
+
+		#region Camera preparations
 
 		protected override void FindLargestResolution()
 		{
@@ -83,7 +86,46 @@ namespace Media.Plugin.Custom.Android
 			}
 		}
 
-		#region Camera preparations
+		// Undone: Call from Dispose()
+
+		/// <inheritdoc />
+		protected override async Task CloseCamera()
+		{
+			try
+			{
+				await CameraOpenCloseLock.WaitAsync().ConfigureAwait(false);
+
+				await base.CloseCamera().ConfigureAwait(false);
+
+				if (_imageReader != null)
+				{
+					_imageReader.Close();
+					_imageReader = null;
+				}
+			}
+			catch (InterruptedException e)
+			{
+				throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
+			}
+			finally
+			{
+				CameraOpenCloseLock.Release();
+			}
+		}
+
+		#endregion
+
+		#region Camera operations
+
+		internal override async Task<MediaFile> TakeMedia(
+			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) data)
+		{
+			await base.TakeMedia(data).ConfigureAwait(false);
+
+			LockFocus();
+
+			return await GetSavedMediaFile();
+		}
 
 		private void LockFocus()
 		{
@@ -142,35 +184,36 @@ namespace Media.Plugin.Custom.Android
 			}
 		}
 
-		// Undone: Call from Dispose()
-		/// <inheritdoc />
-		protected override async Task CloseCamera()
+		/// <summary>
+		/// Gets image which has been saved after capturing.
+		/// </summary>
+		/// <returns>System.Threading.Tasks.Task&lt;Plugin.Media.Abstractions.MediaFile&gt;: Captured photo.</returns>
+		protected override Task<MediaFile> GetSavedMediaFile()
 		{
-			try
+			var tcs = new TaskCompletionSource<MediaFile>();
+
+			MediaPickerActivity.MediaPicked += ImageStoredHandler;
+
+			return tcs.Task;
+
+			#region Local functions
+
+			void ImageStoredHandler(object sender, MediaPickedEventArgs args)
 			{
-				await CameraOpenCloseLock.WaitAsync().ConfigureAwait(false);
-
-				await base.CloseCamera().ConfigureAwait(false);
-
-				if (_imageReader != null)
+				try
 				{
-					_imageReader.Close();
-					_imageReader = null;
+					if (args.IsCanceled) tcs.SetResult(default);
+					else if (args.Error != null) tcs.SetException(args.Error);
+					else tcs.SetResult(args.Media);
+				}
+				finally
+				{
+					MediaPickerActivity.MediaPicked -= ImageStoredHandler;
 				}
 			}
-			catch (InterruptedException e)
-			{
-				throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
-			}
-			finally
-			{
-				CameraOpenCloseLock.Release();
-			}
+
+			#endregion
 		}
-
-		#region Overrides of Camera
-
-		#endregion
 
 		#endregion
 

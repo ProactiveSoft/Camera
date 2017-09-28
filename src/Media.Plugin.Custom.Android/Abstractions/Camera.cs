@@ -45,8 +45,6 @@ namespace Media.Plugin.Custom.Android.Abstractions
 	{
 		#region Fields & properties
 
-		protected readonly IVisitable Visitable;
-
 		// Undone: Make fields private & expose operations
 		//++ Camera2's camera 
 		/// <summary>
@@ -151,9 +149,8 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		/// </summary>
 		/// <param name="storeOptions">The store options.</param>
 		/// <param name="visitable">The visitable.</param>
-		protected Camera(StoreMediaOptions storeOptions, IVisitable visitable)
+		protected Camera(StoreMediaOptions storeOptions)
 		{
-			Visitable = visitable;
 			StoreOptions = storeOptions as StoreCameraMediaOptions;
 
 			Manager = (CameraManager)CrossCurrentActivity.Current.Activity.GetSystemService(Context.CameraService);
@@ -288,6 +285,12 @@ namespace Media.Plugin.Custom.Android.Abstractions
 
 		#region Camera preparations
 
+		protected void SetAutoFlash(CaptureRequest.Builder captureRequestBuilder)
+		{
+			if (FlashSupported)
+				captureRequestBuilder.Set(CaptureRequest.ControlAeMode, (int)ControlAEMode.OnAutoFlash);
+		}
+
 		protected abstract void SetupMediaReader();
 
 		protected void UnlockFocus()
@@ -346,12 +349,8 @@ namespace Media.Plugin.Custom.Android.Abstractions
 		{
 			(bool permission, Action<StoreMediaOptions> verifyOptions, IMedia media) = data;
 
-			if (CameraCaptureSession == null)
-			{
-				(CameraDevice camera, CameraCaptureSession session) = await SetupCamera().ConfigureAwait(false);
-				CameraDevice = camera;
-				CameraCaptureSession = session;
-			}
+			if (CameraCaptureSession == null) // Setup camera if it's being used for the first time
+				(CameraDevice, CameraCaptureSession) = await SetupCamera().ConfigureAwait(false);
 
 			return default; // No need to return anything as it only prepares camera to be used by Child
 
@@ -399,11 +398,7 @@ namespace Media.Plugin.Custom.Android.Abstractions
 			}
 		}
 
-		protected void SetAutoFlash(CaptureRequest.Builder captureRequestBuilder)
-		{
-			if (FlashSupported)
-				captureRequestBuilder.Set(CaptureRequest.ControlAeMode, (int)ControlAEMode.OnAutoFlash);
-		}
+		protected abstract Task<MediaFile> GetSavedMediaFile();
 
 		#endregion
 

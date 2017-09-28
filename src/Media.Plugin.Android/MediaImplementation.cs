@@ -811,7 +811,7 @@ namespace Plugin.Media
 			(bool, Action<StoreMediaOptions>, IMedia) data =
 				(Task.Run(async () => await RequestCameraPermissions()).Result, VerifyOptions, this);
 
-			return ((ICameraVisitor<T>)visitor).Visit(data);
+			return ((IMediaVisitor<T>)visitor).Visit(data);
 		}
 
 		#endregion

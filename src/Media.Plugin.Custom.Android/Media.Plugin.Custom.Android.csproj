@@ -81,11 +81,10 @@
     <Compile Include="States\Capture\WaitingNonPrecaptureState.cs" />
     <Compile Include="States\Capture\WaitingPrecaptureState.cs" />
     <Compile Include="VideoCamera.cs" />
-    <Compile Include="Abstractions\AndroidBaseVisitor.cs" />
+    <Compile Include="AndroidVisitor.cs" />
     <Compile Include="Helpers\EventArgs\CameraDeviceStateEventArgs.cs" />
     <Compile Include="Handlers\CameraDeviceStateHandler.cs" />
     <Compile Include="Handlers\ImageAvailableHandler.cs" />
-    <Compile Include="NoConfirmTakePhotoVisitor.cs" />
     <Compile Include="MainApplication.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
