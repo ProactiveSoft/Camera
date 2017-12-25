@@ -1,5 +1,6 @@
 ## Changelog
 ### [3.0.2]
+* Taking photo without confirmation on Android
 * Fix Lat/Long saving on iOS
 
 ### [3.0.0]

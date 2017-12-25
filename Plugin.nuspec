@@ -2,10 +2,10 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
    <metadata minClientVersion="2.8.1">
        <id>Xam.Plugin.Media</id>
-       <version>$version$</version>
+       <version>3.0.1</version>
        <title>Media Plugin for Xamarin and Windows</title>
-       <authors>James Montemagno</authors>
-       <owners>James Montemagno</owners>
+       <authors>James Montemagno, Anil Kumar</authors>
+       <owners>James Montemagno, Proso</owners>
        <licenseUrl>https://github.com/jamesmontemagno/MediaPlugin/blob/master/LICENSE</licenseUrl>
        <projectUrl>http://github.com/jamesmontemagno/MediaPlugin</projectUrl>
        <iconUrl>http://www.refractored.com/images/plugin_icon_media.png</iconUrl>
@@ -40,6 +40,8 @@
          </group>
          <group targetFramework="portable-net45+win+wpa81+wp80">
          </group>
+         <group targetFramework="portable-net45+netcore45+wpa81+MonoAndroid10+Xamarin.iOS10">
+         </group>
          <group targetFramework="uap">
          </group>
          <group targetFramework="dotnet">
@@ -54,15 +56,22 @@
      <file src="nuget\readme.txt" target="readme.txt" /> 
      <!--Standard/PCL-->
      <file src="src\Media.Plugin\bin\Release\netstandard1.0\Plugin.Media.*" target="lib\netstandard1.0" />
+     <file src="src\Media.Plugin\bin\Release\netstandard1.0\Plugin.Media.*" target="lib\portable-net45+netcore45+wpa81+MonoAndroid10+Xamarin.iOS10" />
 
      <!--Xamarin.Android-->
      <file src="src\Media.Plugin.Android\bin\Release\Plugin.Media.*" target="lib\MonoAndroid10" />
+     <file src="src\Media.Plugin.Custom.Android\bin\Release\Plugin.Media.*" target="lib\MonoAndroid10" />
+     <file src="src\Media.Plugin.Custom.Android\bin\Release\Media.Plugin.Custom.*" target="lib\MonoAndroid10" />
   
      <!--Xamarin.iOS-->
      <file src="src\Media.Plugin.iOS\bin\iPhone\Release\Plugin.Media.*" target="lib\Xamarin.iOS10" />
+     <file src="src\Media.Plugin.Custom.iOS\bin\Release\Plugin.Media.*" target="lib\Xamarin.iOS10" />
+     <file src="src\Media.Plugin.Custom.iOS\bin\Release\Media.Plugin.Custom.*" target="lib\Xamarin.iOS10" />
      
      <!--UWP-->
      <file src="src\Media.Plugin.UWP\bin\Release\Plugin.Media.*" target="lib\UAP10" />
+     <file src="src\Media.Plugin.Custom.UWP\bin\Release\Plugin.Media.*" target="lib\UAP10" />
+     <file src="src\Media.Plugin.Custom.UWP\bin\Release\Media.Plugin.Custom.*" target="lib\UAP10" />
      
    </files>
 </package>

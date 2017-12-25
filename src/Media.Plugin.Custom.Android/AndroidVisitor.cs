@@ -1,6 +1,6 @@
 // ***********************************************************************
 // Assembly         : Media.Plugin.Custom.Android
-// Author           : anila
+// Author           : Anil Kumar
 // Created          : 09-28-2017
 //
 // Last Modified By : anila
